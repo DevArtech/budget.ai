@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+uvicorn = "*"
+fastapi = "*"
+pydantic-settings = "*"
+fastapi-cors = "*"
+pandas = "*"
+groq = "*"
+langchain = "*"
+langchain_groq = "*"
+
+[dev-packages]
+black = "*"
+
+[requires]
+python_version = "3.11"
+
+[scripts]
+start = "uvicorn server.src.main:app --reload"
+format = "black ."

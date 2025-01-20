@@ -1,0 +1,33 @@
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #1a1a1a;
+  transition: all 0.2s ease-in-out;
+}
+
+.transaction-item:hover {
+  transform: translateX(4px);
+  background-color: #262626;
+}
+
+.delete-button {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.transaction-item:hover .delete-button {
+  opacity: 1;
+}
+
+.new-transaction-button {
+  background-color: #2563eb;
+  color: white;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.new-transaction-button:hover {
+  background-color: #1d4ed8;
+}
