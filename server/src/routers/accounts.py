@@ -1,26 +1,31 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
 
-from server.src.models import Account
+from server.src.models import Account, UserInDB
+from server.src.services.authentication_service import AuthenticationService
 from server.src.databridge.base_databridge import BaseDatabridge
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
-
 @router.get("/")
-def get_accounts():
+async def get_accounts(current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    result = db.query("SELECT * FROM accounts")
+    result = db.query("SELECT * FROM accounts WHERE user_id = ?", (current_user.id,))
     return result.to_dict(orient='records')
 
 @router.get("/{id}") 
-def get_account(id: int):
+async def get_account(id: int, current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    result = db.query("SELECT * FROM accounts WHERE id = ?", (id,))
+    result = db.query("SELECT * FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id))
     return result.to_dict(orient='records')
 
 @router.get("/{id}/transactions")
-def get_account_transactions(id: int):
+async def get_account_transactions(id: int, current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
+    account = db.query("SELECT * FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id)).to_dict(orient='records')
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+        
     expenses = db.query("SELECT *, 'expense' as type FROM expenses WHERE account_id = ?", (id,))
     income = db.query("SELECT *, 'income' as type FROM income WHERE account_id = ?", (id,))
     
@@ -29,21 +34,29 @@ def get_account_transactions(id: int):
     return transactions
 
 @router.post("/")
-def create_account(account: Account):
+async def create_account(account: Account, current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    db.execute("INSERT INTO accounts (name, type, balance, last_updated) VALUES (?, ?, ?, ?)", 
-               (account.name, account.type, account.balance, account.last_updated))
+    db.execute("INSERT INTO accounts (name, type, balance, last_updated, user_id) VALUES (?, ?, ?, ?, ?)", 
+               (account.name, account.type, account.balance, account.last_updated, current_user.id))
     return {"message": "Account created successfully"}
 
 @router.put("/{id}")
-def update_account(id: int, account: Account):
+async def update_account(id: int, account: Account, current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    db.execute("UPDATE accounts SET name = ?, type = ?, balance = ?, last_updated = ? WHERE id = ?", 
-               (account.name, account.type, account.balance, account.last_updated, id))
+    existing = db.query("SELECT * FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id)).to_dict(orient='records')
+    if not existing:
+        raise HTTPException(status_code=404, detail="Account not found")
+        
+    db.execute("UPDATE accounts SET name = ?, type = ?, balance = ?, last_updated = ? WHERE id = ? AND user_id = ?", 
+               (account.name, account.type, account.balance, account.last_updated, id, current_user.id))
     return {"message": "Account updated successfully"}
 
 @router.delete("/{id}")
-def delete_account(id: int):
+async def delete_account(id: int, current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    db.execute("DELETE FROM accounts WHERE id = ?", (id,))
+    existing = db.query("SELECT * FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id)).to_dict(orient='records')
+    if not existing:
+        raise HTTPException(status_code=404, detail="Account not found")
+        
+    db.execute("DELETE FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id))
     return {"message": "Account deleted successfully"}

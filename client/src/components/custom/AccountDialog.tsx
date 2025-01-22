@@ -17,12 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import styles from "../../pages/Accounts.module.css";
+import { useNavigate } from "react-router-dom";
 
 interface AccountDialogProps {
   onAccountCreated: () => void;
 }
 
 export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("");
@@ -33,10 +35,12 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
     e.preventDefault();
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:8000/accounts/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name,
@@ -45,6 +49,12 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
           last_updated: new Date().toISOString().split("T")[0],
         }),
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to create account");

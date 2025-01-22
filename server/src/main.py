@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware 
 
+from server.src.routers.auth import router as auth_router
 from server.src.routers.expenses import router as expenses_router
 from server.src.routers.income import router as income_router
 from server.src.routers.transactions import router as transactions_router
@@ -18,11 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/")
-def root():
-    return {"message": "Hello World!"}
-
+app.include_router(auth_router)
 app.include_router(transactions_router)
 app.include_router(expenses_router)
 app.include_router(income_router)

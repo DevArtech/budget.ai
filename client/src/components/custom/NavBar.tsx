@@ -1,5 +1,5 @@
-import { FC } from "react";
-import { Link } from "react-router-dom";
+import { FC, useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import styles from "./NavBar.module.css";
 import {
   NavigationMenu,
@@ -14,6 +14,26 @@ interface NavBarProps {
 }
 
 const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    // If no token and not on login page, redirect to login
+    if (!token && location.pathname !== "/login") {
+      navigate("/login");
+    }
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
+
   return (
     <nav className={styles.nav} style={{ backgroundColor }}>
       <Link to="/">
@@ -21,20 +41,35 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
       </Link>
       <NavigationMenu className={styles.navMenu}>
         <NavigationMenuList>
-          <NavigationMenuItem>
-            <Link to="/">
-              <NavigationMenuLink>Overview</NavigationMenuLink>
-            </Link>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <Link to="/accounts">
-              <NavigationMenuLink>Accounts</NavigationMenuLink>
-            </Link>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <Link to="/transactions">
-              <NavigationMenuLink>Transactions</NavigationMenuLink>
-            </Link>
+          {isLoggedIn && (
+            <>
+              <NavigationMenuItem>
+                <Link to="/">
+                  <NavigationMenuLink>Overview</NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/accounts">
+                  <NavigationMenuLink>Accounts</NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/transactions">
+                  <NavigationMenuLink>Transactions</NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </>
+          )}
+          <NavigationMenuItem className={styles.login}>
+            {isLoggedIn ? (
+              <NavigationMenuLink onClick={handleLogout}>
+                Logout
+              </NavigationMenuLink>
+            ) : (
+              <Link to="/login">
+                <NavigationMenuLink>Login</NavigationMenuLink>
+              </Link>
+            )}
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>

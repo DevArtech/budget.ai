@@ -31,3 +31,7 @@
 .new-transaction-button:hover {
   background-color: #1d4ed8;
 }
+
+button {
+  background-color: white;
+}

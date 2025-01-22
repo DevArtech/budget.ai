@@ -12,6 +12,7 @@ import {
   XAxis,
 } from "recharts";
 import { AccountDialog } from "@/components/custom/AccountDialog";
+import { useNavigate } from "react-router-dom";
 
 interface Transaction {
   id: number;
@@ -48,24 +49,50 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
 };
 
 export default function Accounts() {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
     try {
-      const response = await fetch("http://localhost:8000/accounts");
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/accounts", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to fetch accounts");
       }
+
       const data = await response.json();
 
       // Fetch transactions for each account
       const accountsWithTransactions = await Promise.all(
         data.map(async (account: Account) => {
           const transactionsResponse = await fetch(
-            `http://localhost:8000/accounts/${account.id}/transactions`
+            `http://localhost:8000/accounts/${account.id}/transactions`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
+
+          if (transactionsResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return account;
+          }
+
           if (transactionsResponse.ok) {
             const transactions = await transactionsResponse.json();
             return { ...account, transactions };
@@ -74,7 +101,7 @@ export default function Accounts() {
         })
       );
 
-      setAccounts(accountsWithTransactions);
+      setAccounts(accountsWithTransactions.filter(Boolean));
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -84,7 +111,7 @@ export default function Accounts() {
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (

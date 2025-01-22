@@ -25,6 +25,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import WorkIcon from "@mui/icons-material/Work";
 import { TransactionDialog } from "./components/custom/TransactionDialog";
 import { SpendSettingsDialog } from "./components/custom/SpendSettingsDialog";
+import { useNavigate } from "react-router-dom";
 
 interface Transaction {
   id: number;
@@ -101,68 +102,151 @@ function TransactionItem({
   setBudgetAllotment: React.Dispatch<React.SetStateAction<number>>;
   setSpendOverTime: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
 
   const handleDelete = async () => {
     try {
       const endpoint = transaction.type === "income" ? "income" : "expenses";
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:8000/${endpoint}/${transaction.id}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to delete transaction");
       }
 
-      // Refresh transactions after deletion
-      const updatedTransactions = await fetch(
-        "http://localhost:8000/transactions"
-      ).then((res) => res.json());
-      const transactionsWithColors = updatedTransactions.map(
-        (t: Transaction) => ({
-          ...t,
-          backgroundColor:
-            categories[t.category as keyof typeof categories] || "#8884d8",
-        })
-      );
-      setTransactions(transactionsWithColors);
+      // Refresh all data after deletion
+      const refreshData = async () => {
+        try {
+          // Refresh transactions
+          const transactionsResponse = await fetch(
+            "http://localhost:8000/transactions",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      // Refresh expenses after deletion
-      const updatedExpenses = await fetch(
-        "http://localhost:8000/expenses"
-      ).then((res) => res.json());
-      setExpenses(updatedExpenses);
+          if (transactionsResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
 
-      // Refresh fixed per month
-      const fixedResponse = await fetch(
-        "http://localhost:8000/expenses/fixed-per-month"
-      );
-      const fixedData = await fixedResponse.json();
-      setFixedPerMonth(fixedData || 0);
+          const transactionsData = await transactionsResponse.json();
+          const transactionsWithColors = transactionsData.map(
+            (t: Transaction) => ({
+              ...t,
+              backgroundColor:
+                categories[t.category as keyof typeof categories] || "#8884d8",
+            })
+          );
+          setTransactions(transactionsWithColors);
 
-      // Refresh budget allotment and spend over time
-      const budgetResponse = await fetch(
-        "http://localhost:8000/spend/budget-allotment"
-      );
-      const budgetData = await budgetResponse.json();
-      setBudgetAllotment(budgetData);
+          // Refresh expenses
+          const expensesResponse = await fetch(
+            "http://localhost:8000/expenses",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      const today = new Date();
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay()); // Go to start of week (Sunday)
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + (6 - today.getDay())); // Go to end of week (Saturday)
+          if (expensesResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
 
-      const spendResponse = await fetch(
-        `http://localhost:8000/spend/spend-over-time?start_date=${
-          startOfWeek.toISOString().split("T")[0]
-        }&end_date=${endOfWeek.toISOString().split("T")[0]}`
-      );
-      const spendData = await spendResponse.json();
-      setSpendOverTime(spendData);
+          const expensesData = await expensesResponse.json();
+          setExpenses(expensesData);
+
+          // Refresh fixed per month
+          const fixedResponse = await fetch(
+            "http://localhost:8000/expenses/fixed-per-month",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (fixedResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const fixedData = await fixedResponse.json();
+          setFixedPerMonth(fixedData || 0);
+
+          // Refresh budget allotment
+          const budgetResponse = await fetch(
+            "http://localhost:8000/spend/budget-allotment",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (budgetResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const budgetData = await budgetResponse.json();
+          setBudgetAllotment(budgetData);
+
+          // Refresh spend over time
+          const today = new Date();
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay());
+          const endOfWeek = new Date(today);
+          endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+
+          const spendResponse = await fetch(
+            `http://localhost:8000/spend/spend-over-time?start_date=${
+              startOfWeek.toISOString().split("T")[0]
+            }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (spendResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const spendData = await spendResponse.json();
+          setSpendOverTime(spendData);
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+
+      refreshData();
     } catch (error) {
       console.error("Error deleting transaction:", error);
     }
@@ -223,6 +307,7 @@ function TransactionItem({
 }
 
 function Overview() {
+  const navigate = useNavigate();
   const [barData, setBarData] = useState<unknown[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -278,39 +363,155 @@ function Overview() {
   };
 
   useEffect(() => {
-    // Fetch budget allotment
-    fetch("http://localhost:8000/spend/budget-allotment")
-      .then((response) => response.json())
-      .then((data) => setBudgetAllotment(data))
-      .catch((error) =>
-        console.error("Error fetching budget allotment:", error)
-      );
+    const fetchInitialData = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-    // Fetch fixed per month expenses
-    fetch("http://localhost:8000/expenses/fixed-per-month")
-      .then((response) => response.json())
-      .then((data) => setFixedPerMonth(data || 0))
-      .catch((error) =>
-        console.error("Error fetching fixed per month:", error)
-      );
+        // Fetch budget allotment
+        const budgetResponse = await fetch(
+          "http://localhost:8000/spend/budget-allotment",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Go to start of week (Sunday)
-    const endOfWeek = new Date(today);
-    endOfWeek.setDate(today.getDate() + (6 - today.getDay())); // Go to end of week (Saturday)
+        if (budgetResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
 
-    fetch(
-      `http://localhost:8000/spend/spend-over-time?start_date=${
-        startOfWeek.toISOString().split("T")[0]
-      }&end_date=${endOfWeek.toISOString().split("T")[0]}`
-    )
-      .then((response) => response.json())
-      .then((data) => setSpendOverTime(data))
-      .catch((error) =>
-        console.error("Error fetching spend over time:", error)
-      );
-  }, []);
+        if (!budgetResponse.ok) {
+          throw new Error("Failed to fetch budget allotment");
+        }
+
+        const budgetData = await budgetResponse.json();
+        setBudgetAllotment(budgetData);
+
+        // Fetch fixed per month expenses
+        const fixedResponse = await fetch(
+          "http://localhost:8000/expenses/fixed-per-month",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (fixedResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!fixedResponse.ok) {
+          throw new Error("Failed to fetch fixed expenses");
+        }
+
+        const fixedData = await fixedResponse.json();
+        setFixedPerMonth(fixedData || 0);
+
+        // Fetch spend over time
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+
+        const spendResponse = await fetch(
+          `http://localhost:8000/spend/spend-over-time?start_date=${
+            startOfWeek.toISOString().split("T")[0]
+          }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (spendResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!spendResponse.ok) {
+          throw new Error("Failed to fetch spend over time");
+        }
+
+        const spendData = await spendResponse.json();
+        setSpendOverTime(spendData);
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+      }
+    };
+
+    fetchInitialData();
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchTransactionsAndExpenses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        // Fetch transactions
+        const transactionsResponse = await fetch(
+          "http://localhost:8000/transactions",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (transactionsResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!transactionsResponse.ok) {
+          throw new Error("Failed to fetch transactions");
+        }
+
+        const transactionsData = await transactionsResponse.json();
+        const transactionsWithColors = transactionsData.map(
+          (t: Transaction) => ({
+            ...t,
+            backgroundColor:
+              categories[t.category as keyof typeof categories] || "#8884d8",
+          })
+        );
+        setTransactions(transactionsWithColors);
+
+        // Fetch expenses
+        const expensesResponse = await fetch("http://localhost:8000/expenses", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (expensesResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!expensesResponse.ok) {
+          throw new Error("Failed to fetch expenses");
+        }
+
+        const expensesData = await expensesResponse.json();
+        setExpenses(expensesData);
+      } catch (error) {
+        console.error("Error fetching transactions and expenses:", error);
+      }
+    };
+
+    fetchTransactionsAndExpenses();
+  }, [navigate]);
 
   useEffect(() => {
     const safeToSpend = Math.max(0, budgetAllotment - spendOverTime);
@@ -356,12 +557,14 @@ function Overview() {
       | "annually";
   }) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:8000/${transaction.isIncome ? "income" : "expenses"}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             ...transaction,
@@ -369,81 +572,138 @@ function Overview() {
         }
       );
 
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to add transaction");
       }
 
-      // Refresh transactions
-      const updatedTransactions = await fetch(
-        "http://localhost:8000/transactions"
-      ).then((res) => res.json());
-      const transactionsWithColors = updatedTransactions.map(
-        (t: Transaction) => ({
-          ...t,
-          backgroundColor:
-            categories[t.category as keyof typeof categories] || "#8884d8",
-        })
-      );
-      setTransactions(transactionsWithColors);
+      // Refresh all data after adding transaction
+      const refreshData = async () => {
+        try {
+          // Refresh transactions
+          const transactionsResponse = await fetch(
+            "http://localhost:8000/transactions",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      // Refresh expenses
-      const updatedExpenses = await fetch(
-        "http://localhost:8000/expenses"
-      ).then((res) => res.json());
-      setExpenses(updatedExpenses);
+          if (transactionsResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
 
-      // Refresh fixed per month
-      const fixedResponse = await fetch(
-        "http://localhost:8000/expenses/fixed-per-month"
-      );
-      const fixedData = await fixedResponse.json();
-      setFixedPerMonth(fixedData || 0);
+          const transactionsData = await transactionsResponse.json();
+          const transactionsWithColors = transactionsData.map(
+            (t: Transaction) => ({
+              ...t,
+              backgroundColor:
+                categories[t.category as keyof typeof categories] || "#8884d8",
+            })
+          );
+          setTransactions(transactionsWithColors);
 
-      // Refresh budget allotment and spend over time
-      const budgetResponse = await fetch(
-        "http://localhost:8000/spend/budget-allotment"
-      );
-      const budgetData = await budgetResponse.json();
-      setBudgetAllotment(budgetData);
+          // Refresh expenses
+          const expensesResponse = await fetch(
+            "http://localhost:8000/expenses",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      const today = new Date();
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay()); // Go to start of week (Sunday)
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + (6 - today.getDay())); // Go to end of week (Saturday)
+          if (expensesResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
 
-      const spendResponse = await fetch(
-        `http://localhost:8000/spend/spend-over-time?start_date=${
-          startOfWeek.toISOString().split("T")[0]
-        }&end_date=${endOfWeek.toISOString().split("T")[0]}`
-      );
-      const spendData = await spendResponse.json();
-      setSpendOverTime(spendData);
+          const expensesData = await expensesResponse.json();
+          setExpenses(expensesData);
+
+          // Refresh fixed per month
+          const fixedResponse = await fetch(
+            "http://localhost:8000/expenses/fixed-per-month",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (fixedResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const fixedData = await fixedResponse.json();
+          setFixedPerMonth(fixedData || 0);
+
+          // Refresh budget allotment
+          const budgetResponse = await fetch(
+            "http://localhost:8000/spend/budget-allotment",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (budgetResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const budgetData = await budgetResponse.json();
+          setBudgetAllotment(budgetData);
+
+          // Refresh spend over time
+          const today = new Date();
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay());
+          const endOfWeek = new Date(today);
+          endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+
+          const spendResponse = await fetch(
+            `http://localhost:8000/spend/spend-over-time?start_date=${
+              startOfWeek.toISOString().split("T")[0]
+            }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (spendResponse.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
+
+          const spendData = await spendResponse.json();
+          setSpendOverTime(spendData);
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+
+      refreshData();
     } catch (error) {
       console.error("Error adding transaction:", error);
     }
   };
-
-  useEffect(() => {
-    // Fetch transactions
-    fetch("http://localhost:8000/transactions")
-      .then((response) => response.json())
-      .then((data) => {
-        const transactionsWithColors = data.map((t: Transaction) => ({
-          ...t,
-          backgroundColor:
-            categories[t.category as keyof typeof categories] || "#8884d8",
-        }));
-        setTransactions(transactionsWithColors);
-      })
-      .catch((error) => console.error("Error fetching transactions:", error));
-
-    // Fetch expenses
-    fetch("http://localhost:8000/expenses")
-      .then((response) => response.json())
-      .then((data) => setExpenses(data))
-      .catch((error) => console.error("Error fetching expenses:", error));
-  }, []);
 
   // Calculate aggregated expenses by category
   const expensesByCategory = expenses.reduce(

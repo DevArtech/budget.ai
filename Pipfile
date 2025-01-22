@@ -12,6 +12,10 @@ pandas = "*"
 groq = "*"
 langchain = "*"
 langchain_groq = "*"
+pyjwt = "*"
+passlib = "*"
+python-multipart = "*"
+bcrypt = "*"
 
 [dev-packages]
 black = "*"

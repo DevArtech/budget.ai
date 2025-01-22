@@ -2,26 +2,36 @@ from datetime import date
 import calendar
 from datetime import datetime
 
+from server.src.models import UserInDB
 from server.src.databridge.base_databridge import BaseDatabridge
 
 class SpendService:
     def __init__(self):
         self.db = BaseDatabridge.get_instance()
 
-    def get_budget_allotment(self):
+    def get_budget_allotment(self, user: UserInDB):
         query = """
-            SELECT amount
-            FROM income
-            WHERE category = 'Work'
-            ORDER BY date DESC
+            SELECT i.amount
+            FROM income i
+            JOIN accounts a ON i.account_id = a.id
+            WHERE i.category = 'Work'
+            AND a.user_id = ?
+            ORDER BY i.date DESC
             LIMIT 1
         """
-        paycheck = self.db.query(query)
+        paycheck = self.db.query(query, (user.id,))
 
         if paycheck.empty:
             return 0
 
-        fixed_expenses = self.db.query("SELECT DISTINCT amount FROM expenses WHERE recurrence IS NOT NULL GROUP BY title, amount, category")
+        fixed_expenses = self.db.query("""
+            SELECT DISTINCT e.amount 
+            FROM expenses e
+            JOIN accounts a ON e.account_id = a.id
+            WHERE e.recurrence IS NOT NULL 
+            AND a.user_id = ?
+            GROUP BY e.title, e.amount, e.category
+        """, (user.id,))
 
         # Calculate prorated fixed expenses (14 days worth)
         now = datetime.now()
@@ -38,12 +48,14 @@ class SpendService:
         return remaining_income / 2
         
     
-    def get_spend_over_time(self, start_date: date, end_date: date):
+    def get_spend_over_time(self, user: UserInDB, start_date: date, end_date: date):
         query = """
-            SELECT SUM(amount) as total_spend
-            FROM expenses 
-            WHERE date BETWEEN ? AND ?
-            AND recurrence IS NULL
+            SELECT SUM(e.amount) as total_spend
+            FROM expenses e
+            JOIN accounts a ON e.account_id = a.id
+            WHERE e.date BETWEEN ? AND ?
+            AND e.recurrence IS NULL
+            AND a.user_id = ?
         """
-        result = self.db.query(query, (start_date, end_date))
+        result = self.db.query(query, (start_date, end_date, user.id))
         return result['total_spend'].iloc[0] if not result.empty and result['total_spend'].iloc[0] else 0

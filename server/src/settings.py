@@ -3,6 +3,8 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     groq_api_key: str
+    jwt_secret_key: str
+    jwt_algorithm: str
 
     class Config:
         env_file = ".env"

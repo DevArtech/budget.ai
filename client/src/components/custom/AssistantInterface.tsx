@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,6 +18,7 @@ interface Message {
 }
 
 export function AssistantInterface() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,14 +40,24 @@ export function AssistantInterface() {
     setIsLoading(true);
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:8000/assistant/chat?message=${encodeURIComponent(
           userMessage
         )}`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to send message");
@@ -90,9 +102,19 @@ export function AssistantInterface() {
 
   const handleClear = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:8000/assistant/clear", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to clear chat history");
@@ -108,7 +130,7 @@ export function AssistantInterface() {
     <Sheet>
       <SheetTrigger asChild>
         <Button
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full p-0"
+          className="fixed bottom-6 right-6 h-12 w-12 rounded-full p-0 assistant-button"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -155,7 +177,7 @@ export function AssistantInterface() {
             variant="ghost"
             size="icon"
             onClick={handleClear}
-            className="h-9 w-9"
+            className="h-9 w-9 bg-black"
             title="Clear chat"
           >
             <Trash2 className="h-4 w-4" />
