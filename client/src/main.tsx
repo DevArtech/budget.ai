@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import Overview from "./Overview.tsx";
 import NavBar from "./components/custom/NavBar.tsx";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import Accounts from "./pages/Accounts.tsx";
 import Transactions from "./pages/Transactions.tsx";
 import Login from "./pages/Login.tsx";
@@ -30,9 +30,13 @@ window.addEventListener("beforeunload", () => {
   clearAssistantHistory();
 });
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
+// Wrapper component to conditionally render AssistantInterface
+const AppContent = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
+  return (
+    <>
       <Toaster />
       <NavBar title="Budget.AI" backgroundColor="#2130cf" />
       <Routes>
@@ -41,7 +45,15 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/login" element={<Login />} />
       </Routes>
-      <AssistantInterface />
+      {!isLoginPage && <AssistantInterface />}
+    </>
+  );
+};
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   </StrictMode>
 );
