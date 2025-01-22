@@ -107,3 +107,7 @@ sup {
 [role="dialog"] > button {
   background-color: #111111;
 }
+
+.action-text {
+  color: #212fcf;
+}

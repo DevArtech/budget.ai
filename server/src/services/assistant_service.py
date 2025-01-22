@@ -9,6 +9,7 @@ from langchain.tools import BaseTool
 from langchain.agents import initialize_agent, Tool
 from typing import AsyncGenerator, List, Dict, ClassVar
 from datetime import datetime
+from langchain.agents import AgentExecutor
 
 from ..models import UserInDB
 from ..databridge.base_databridge import BaseDatabridge
@@ -210,7 +211,32 @@ class AssistantService:
         )
 
         # Initialize the agent
-        self.agents = {}
+        self.agents: Dict[int, AgentExecutor] = {}
+        self.actions = {
+            "get_transactions_by_date_range": "Retrieving transaction data from {start_date} to {end_date}...",
+            "get_transactions_by_category": "Retrieving transaction data for {category}...",
+            "get_accounts": "Retrieving account data...",
+            "get_transactions_per_account": "Retrieving transaction data for {account_name}...",
+            "get_spend_details": "Retrieving spend data...",
+        }
+
+        # Map tools to their preprocessing functions
+        self.preprocessors = {
+            "get_transactions_per_account": self._preprocess_account_data,
+            # Add more preprocessors here as needed
+        }
+
+    def _preprocess_account_data(self, input_data: dict) -> dict:
+        """Preprocesses account data by adding account name."""
+        if "account_id" in input_data:
+            account = BaseDatabridge.get_instance().query(
+                "SELECT name FROM accounts WHERE id = ?", (input_data["account_id"],)
+            )
+            if not account.empty:
+                input_data["account_name"] = account.iloc[0]["name"]
+            else:
+                input_data["account_name"] = f"account {input_data['account_id']}"
+        return input_data
 
     async def chat(self, user: UserInDB, message: str) -> AsyncGenerator[str, None]:
         """
@@ -278,12 +304,19 @@ class AssistantService:
                 memory=memory,
             )
         try:
-            response = await self.agents[user.id].arun(message)
+            async for chunk in self.agents[user.id].astream(message):
+                if chunk.get("actions"):
+                    action = chunk.get("actions")[0]
+                    input_data = json.loads(action.tool_input)
 
-            # Since we want to stream the response, we'll yield it in chunks
-            chunk_size = 4  # Number of characters per chunk
-            for i in range(0, len(response), chunk_size):
-                yield response[i : i + chunk_size]
+                    # Apply any preprocessing for this tool
+                    if action.tool in self.preprocessors:
+                        input_data = self.preprocessors[action.tool](input_data)
+
+                    yield f"<|{self.actions[action.tool].format(**input_data)}|>"
+                elif chunk.get("output"):
+                    yield chunk.get("output")
+
         except Exception as e:
             error_msg = str(e).lower()
             if "rate limit" in error_msg:

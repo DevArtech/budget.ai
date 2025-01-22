@@ -17,11 +17,18 @@ interface Message {
   content: string;
 }
 
+interface ActionMessage {
+  id: number;
+  text: string;
+  timestamp: number;
+}
+
 export function AssistantInterface() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [actionMessages, setActionMessages] = useState<ActionMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +38,18 @@ export function AssistantInterface() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    // Clean up action messages that are older than 5 seconds
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setActionMessages((prev) =>
+        prev.filter((msg) => now - msg.timestamp < 5000)
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -38,6 +57,7 @@ export function AssistantInterface() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
+    setActionMessages([]);
 
     try {
       const token = localStorage.getItem("token");
@@ -74,17 +94,31 @@ export function AssistantInterface() {
         if (done) break;
 
         const text = new TextDecoder().decode(value);
-        assistantMessage += text;
 
-        // Update the message in real-time
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === "assistant") {
-            lastMessage.content = assistantMessage;
-          }
-          return newMessages;
-        });
+        // Check for action messages
+        const actionMatch = text.match(/<\|(.*?)\|>/);
+        if (actionMatch) {
+          setActionMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              text: actionMatch[1],
+              timestamp: Date.now(),
+            },
+          ]);
+        } else {
+          assistantMessage += text;
+
+          // Update the message in real-time
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === "assistant") {
+              lastMessage.content = assistantMessage;
+            }
+            return newMessages;
+          });
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -172,31 +206,42 @@ export function AssistantInterface() {
             )}
           </div>
         </ScrollArea>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClear}
-            className="h-9 w-9 bg-black"
-            title="Clear chat"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
-            disabled={isLoading}
-            style={{ color: "black" }}
-          />
-          <Button
-            size="icon"
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="flex flex-col gap-2">
+          {actionMessages.length > 0 && (
+            <div className="action-text text-sm text-muted-foreground bg-muted py-1 rounded">
+              {actionMessages.map((action) => (
+                <div key={action.id} className="text-center">
+                  {action.text}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClear}
+              className="h-9 w-9 bg-black"
+              title="Clear chat"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type a message..."
+              disabled={isLoading}
+              style={{ color: "black" }}
+            />
+            <Button
+              size="icon"
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
