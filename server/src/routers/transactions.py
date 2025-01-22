@@ -10,22 +10,32 @@ router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
 @router.get("/")
-async def get_all_transactions(current_user: Annotated[UserInDB, Depends(AuthenticationService.get_current_active_user)]):
+async def get_all_transactions(
+    current_user: Annotated[
+        UserInDB, Depends(AuthenticationService.get_current_active_user)
+    ]
+):
     db = BaseDatabridge.get_instance()
-    income = db.query("""
+    income = db.query(
+        """
         SELECT i.id, i.title, i.amount, i.date, i.category, 'income' as type 
         FROM income i 
         JOIN accounts a ON i.account_id = a.id 
         WHERE a.user_id = ? 
         ORDER BY date DESC LIMIT 50
-    """, (current_user.id,))
-    expenses = db.query("""
+    """,
+        (current_user.id,),
+    )
+    expenses = db.query(
+        """
         SELECT e.id, e.title, e.amount, e.date, e.category, 'expense' as type 
         FROM expenses e 
         JOIN accounts a ON e.account_id = a.id 
         WHERE a.user_id = ? 
         ORDER BY date DESC LIMIT 50
-    """, (current_user.id,))
+    """,
+        (current_user.id,),
+    )
     result = pd.concat([income, expenses], ignore_index=True)
-    result = result.sort_values('date', ascending=False)
-    return result.to_dict(orient='records')
+    result = result.sort_values("date", ascending=False)
+    return result.to_dict(orient="records")

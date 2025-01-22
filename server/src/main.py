@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware 
+from fastapi.middleware.cors import CORSMiddleware
 
 from server.src.routers.auth import router as auth_router
 from server.src.routers.expenses import router as expenses_router
@@ -8,6 +8,7 @@ from server.src.routers.transactions import router as transactions_router
 from server.src.routers.accounts import router as accounts_router
 from server.src.routers.spend import router as spend_router
 from server.src.routers.assistant import router as assistant_router
+
 
 app = FastAPI()
 
@@ -26,4 +27,3 @@ app.include_router(income_router)
 app.include_router(accounts_router)
 app.include_router(spend_router)
 app.include_router(assistant_router)
-

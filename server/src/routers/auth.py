@@ -27,6 +27,7 @@ async def login_for_access_token(
     )
     return Token(access_token=access_token, token_type="bearer")
 
+
 @router.post("/signup")
 async def signup(user: NewUser):
     user = auth_service.create_user(user)
@@ -35,6 +36,7 @@ async def signup(user: NewUser):
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
+
 
 @router.get("/users/me/", response_model=User)
 async def read_users_me(
