@@ -1,4 +1,5 @@
 import json
+import asyncio
 import pandas as pd
 from textwrap import dedent
 from datetime import date, timedelta
@@ -77,13 +78,15 @@ class TransactionsByCategoryTool(BaseTool):
         f'Use this tool to get transactional data by category. Input should be a JSON string with category. Category is the name of the category you want to retrieve. The possible categories are: {", ".join(pd.concat([db.query("SELECT DISTINCT e.category FROM expenses e JOIN accounts a ON e.account_id = a.id"), db.query("SELECT DISTINCT i.category FROM income i JOIN accounts a ON i.account_id = a.id")])["category"].unique())}'
     )
 
+    db: ClassVar[BaseDatabridge] = BaseDatabridge.get_instance()
+
     def _run(self, category: str, *args, **kwargs) -> str:
         category = json.loads(category)
         category = category["category"]
 
         expenses = self.db.query(
             """
-            SELECT e.* 
+            SELECT e.*, 'expense' as type 
             FROM expenses e
             JOIN accounts a ON e.account_id = a.id
             WHERE e.category = ?
@@ -94,7 +97,7 @@ class TransactionsByCategoryTool(BaseTool):
 
         income = self.db.query(
             """
-            SELECT i.* 
+            SELECT i.*, 'income' as type 
             FROM income i
             JOIN accounts a ON i.account_id = a.id
             WHERE i.category = ?
@@ -291,6 +294,8 @@ class AssistantService:
                                         In general, unless otherwise specified or the use-case determines otherwise, you should check data from within the last month.
                                         
                                         ALWAYS make an attempt to use the tools to get the data you need. If you cannot use the tools, then inform the user that you cannot answer the question.
+                                        NEVER respond with an ID of data. If you have an ID, find the name the ID corresponds to.
+                                        ENSURE that tool inputs are formatted as JSON strings with the keys being the names of the parameters for the tools you are using.
                                         """
                 )
             )
@@ -315,7 +320,10 @@ class AssistantService:
 
                     yield f"<|{self.actions[action.tool].format(**input_data)}|>"
                 elif chunk.get("output"):
-                    yield chunk.get("output")
+                    output = chunk.get("output")
+                    for word in output.split():
+                        yield (word + " ").replace("|>", "").replace("<|", "")
+                        await asyncio.sleep(0.02)
 
         except Exception as e:
             error_msg = str(e).lower()

@@ -314,10 +314,7 @@ function Overview() {
   const [budgetAllotment, setBudgetAllotment] = useState<number>(1);
   const [spendOverTime, setSpendOverTime] = useState<number>(1);
   const [fixedPerMonth, setFixedPerMonth] = useState<number>(1);
-  const [warningPosition, setWarningPosition] = useState<number>(() => {
-    const savedPosition = localStorage.getItem("spendWarningPosition");
-    return savedPosition ? Number(savedPosition) : 25;
-  });
+  const [warningPosition, setWarningPosition] = useState<number>(25);
   const [spendData, setSpendData] = useState([
     {
       name: "Safe-to-Spend",
@@ -366,6 +363,26 @@ function Overview() {
     const fetchInitialData = async () => {
       try {
         const token = localStorage.getItem("token");
+
+        // Fetch user data to get spend warning position
+        const userResponse = await fetch("http://localhost:8000/users/me/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (userResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const userData = await userResponse.json();
+        setWarningPosition(userData.spend_warning);
 
         // Fetch budget allotment
         const budgetResponse = await fetch(
@@ -724,7 +741,64 @@ function Overview() {
 
   const handleWarningPositionChange = (position: number) => {
     setWarningPosition(position);
-    localStorage.setItem("spendWarningPosition", position.toString());
+  };
+
+  const handleSavingsPercentChange = (_: number) => {
+    const refreshData = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        console.log("Refreshing data...");
+        // Refresh budget allotment
+        const budgetResponse = await fetch(
+          "http://localhost:8000/spend/budget-allotment",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (budgetResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        const budgetData = await budgetResponse.json();
+        setBudgetAllotment(budgetData);
+
+        // Refresh spend over time
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+
+        const spendResponse = await fetch(
+          `http://localhost:8000/spend/spend-over-time?start_date=${
+            startOfWeek.toISOString().split("T")[0]
+          }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (spendResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        const spendData = await spendResponse.json();
+        setSpendOverTime(spendData);
+      } catch (error) {
+        console.error("Error refreshing data:", error);
+      }
+    };
+
+    refreshData();
   };
 
   return (
@@ -774,8 +848,8 @@ function Overview() {
         <CardHeader className="flex flex-row justify-between">
           <CardTitle className="text-2xl">Spend</CardTitle>
           <SpendSettingsDialog
-            warningPosition={warningPosition}
             onWarningPositionChange={handleWarningPositionChange}
+            onSavingsPercentChange={handleSavingsPercentChange}
           />
         </CardHeader>
         <CardContent>

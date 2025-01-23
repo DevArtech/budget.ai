@@ -9,5 +9,6 @@ To setup, ensure you have NPM, Pipenv, and SQLite installed and configured.
 1. Make a copy of the [.example.env](./.example.env) file and rename it to [.env](./.env). Fill in your Groq API key.
 2. Generate a JWT Secret Key with `openssl rand -hex 32`
 3. Run `npm build`
-4. Run `npm run dev` to start up the frontend
-5. In a separate terminal, run `pipenv run start` to start up the backend.
+4. Run `pipenv install -d`
+5. Run `npm run dev` to start up the frontend
+6. In a separate terminal, run `pipenv run start` to start up the backend.

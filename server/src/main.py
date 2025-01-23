@@ -8,6 +8,7 @@ from server.src.routers.transactions import router as transactions_router
 from server.src.routers.accounts import router as accounts_router
 from server.src.routers.spend import router as spend_router
 from server.src.routers.assistant import router as assistant_router
+from server.src.routers.plaid import router as plaid_router
 
 
 app = FastAPI()
@@ -21,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(plaid_router)
 app.include_router(transactions_router)
 app.include_router(expenses_router)
 app.include_router(income_router)

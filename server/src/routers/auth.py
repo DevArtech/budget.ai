@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from server.src.models import Token, User, NewUser
 from server.src.services.authentication_service import AuthenticationService
+from server.src.databridge.base_databridge import BaseDatabridge
 
 router = APIRouter()
 auth_service = AuthenticationService()
@@ -44,9 +45,20 @@ async def read_users_me(
 ):
     return current_user
 
-
-@router.get("/users/me/items/")
-async def read_own_items(
+@router.put("/users/me/update-spend-warning")
+async def update_spend_warning(
     current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
+    spend_warning: int
 ):
-    return [{"item_id": "Foo", "owner": current_user.username}]
+    db = BaseDatabridge.get_instance()
+    db.execute(f"UPDATE users SET spend_warning = {spend_warning} WHERE id = {current_user.id}")
+    return {"message": "Spend warning updated successfully"}
+
+@router.put("/users/me/update-savings-percent")
+async def update_savings_percent(
+    current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
+    savings_percent: int
+):
+    db = BaseDatabridge.get_instance()
+    db.execute(f"UPDATE users SET savings_percent = {savings_percent} WHERE id = {current_user.id}")
+    return {"message": "Savings percent updated successfully"}

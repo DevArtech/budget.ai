@@ -18,7 +18,7 @@ class AuthenticationService:
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         self.db = BaseDatabridge.get_instance()
         self.SECRET_KEY = settings.jwt_secret_key
-        self.ALGORITHM = "HS256"
+        self.ALGORITHM = settings.jwt_algorithm
         self.ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:

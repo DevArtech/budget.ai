@@ -16,6 +16,7 @@ pyjwt = "*"
 passlib = "*"
 python-multipart = "*"
 bcrypt = "*"
+plaid-python = "*"
 
 [dev-packages]
 black = "*"

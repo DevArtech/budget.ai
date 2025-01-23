@@ -27,7 +27,7 @@ class SpendService:
 
         fixed_expenses = self.db.query(
             """
-            SELECT DISTINCT e.amount 
+            SELECT DISTINCT e.amount, e.recurrence
             FROM expenses e
             JOIN accounts a ON e.account_id = a.id
             WHERE e.recurrence IS NOT NULL 
@@ -37,20 +37,24 @@ class SpendService:
             (user.id,),
         )
 
-        # Calculate prorated fixed expenses (14 days worth)
-        now = datetime.now()
-        current_year = now.year
-        current_month = now.month
+        recurrence_to_days = {
+            "daily": 1,
+            "weekly": 7,
+            "bi-weekly": 14,
+            "monthly": 30,
+            "quarterly": 91,
+            "annually": 365,
+        }
 
-        total_days = calendar.monthrange(current_year, current_month)[1]
-        prorated_expenses = fixed_expenses["amount"].apply(
-            lambda x: (x * 14) / total_days
+        prorated_expenses = fixed_expenses.apply(
+            lambda row: (row["amount"] * 14) / recurrence_to_days[row["recurrence"]], 
+            axis=1
         )
         total_fixed = prorated_expenses.sum()
 
         paycheck_amount = paycheck["amount"].iloc[0]
 
-        remaining_income = paycheck_amount - total_fixed - (paycheck_amount * 0.1)
+        remaining_income = paycheck_amount - total_fixed - (paycheck_amount * (float(user.savings_percent) / 100))
         return remaining_income / 2
 
     def get_spend_over_time(self, user: UserInDB, start_date: date, end_date: date):

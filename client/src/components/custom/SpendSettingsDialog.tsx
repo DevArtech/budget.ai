@@ -10,23 +10,77 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { SettingsIcon } from "lucide-react";
+import axios from "axios";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface SpendSettingsDialogProps {
-  warningPosition: number;
   onWarningPositionChange: (position: number) => void;
+  onSavingsPercentChange: (savingsPercent: number) => void;
 }
 
 export function SpendSettingsDialog({
-  warningPosition,
   onWarningPositionChange,
+  onSavingsPercentChange,
 }: SpendSettingsDialogProps) {
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState(warningPosition);
+  const [position, setPosition] = useState(25);
+  const [savingsPercent, setSavingsPercent] = useState(20);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchUserSettings = async () => {
+      const token = localStorage.getItem("token");
+
+        // Fetch user data to get spend warning position
+        const userResponse = await fetch("http://localhost:8000/users/me/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (userResponse.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const userData = await userResponse.json();
+        setPosition(userData.spend_warning);
+        setSavingsPercent(userData.savings_percent);
+    };
+
+    fetchUserSettings();
+  }, []);
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onWarningPositionChange(position);
-    setOpen(false);
+    try {
+      await axios.put('http://localhost:8000/users/me/update-spend-warning', null, {
+        params: { spend_warning: position },
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      await axios.put('http://localhost:8000/users/me/update-savings-percent', null, {
+        params: { savings_percent: savingsPercent },
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      onWarningPositionChange(position);
+      onSavingsPercentChange(savingsPercent);
+      setOpen(false);
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+    }
   };
 
   return (
@@ -66,6 +120,21 @@ export function SpendSettingsDialog({
             <p className="text-sm text-gray-500">
               The percentage of the budget used that will warn against any
               further spending.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="savings-percent">Savings Percent (%)</Label>
+            <Input
+              id="savings-percent"
+              type="number"
+              min="0"
+              max="100"
+              value={savingsPercent}
+              onChange={(e) => setSavingsPercent(Number(e.target.value))}
+              required
+            />
+            <p className="text-sm text-gray-500">
+              The percentage of money that will be saved each month and automatically deducted from your budget.
             </p>
           </div>
           <Button type="submit" className="w-full">
