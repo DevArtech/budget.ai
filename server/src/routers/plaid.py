@@ -41,7 +41,7 @@ async def exchange_public_token(
     # Get plaid account id
     account_id = db.query(
         "SELECT id FROM tokens WHERE name = ? AND user_id = ?",
-        ("Discover", current_user.id),
+        (token.name, current_user.id),
     ).to_dict(orient="records")[0]["id"]
 
     # Get account and insert into accounts
@@ -49,7 +49,7 @@ async def exchange_public_token(
     db.execute(
         "INSERT INTO accounts (name, type, balance, user_id) VALUES (?, ?, ?, ?)",
         (
-            "Discover",
+            token.name,
             account["type"],
             account["balances"].get("limit", 0),
             current_user.id,
@@ -59,7 +59,7 @@ async def exchange_public_token(
     # Get account id
     account_id = db.query(
         "SELECT id FROM accounts WHERE name = ? AND user_id = ?",
-        ("Discover", current_user.id),
+        (token.name, current_user.id),
     ).to_dict(orient="records")[0]["id"]
 
     # Get transactions
@@ -67,7 +67,7 @@ async def exchange_public_token(
         PlaidTransactionRequest(start_date="2024-01-01", end_date="2025-01-24"),
         current_user,
     )
-    for transaction in transactions["Discover"]:
+    for transaction in transactions[token.name]:
         if transaction.get("category") and len(transaction.get("category")) > 0:
             category = transaction.get("category")[0]
         else:
