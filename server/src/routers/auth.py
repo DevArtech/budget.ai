@@ -45,20 +45,26 @@ async def read_users_me(
 ):
     return current_user
 
+
 @router.put("/users/me/update-spend-warning")
 async def update_spend_warning(
     current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
-    spend_warning: int
+    spend_warning: int,
 ):
     db = BaseDatabridge.get_instance()
-    db.execute(f"UPDATE users SET spend_warning = {spend_warning} WHERE id = {current_user.id}")
+    db.execute(
+        f"UPDATE users SET spend_warning = {spend_warning} WHERE id = {current_user.id}"
+    )
     return {"message": "Spend warning updated successfully"}
+
 
 @router.put("/users/me/update-savings-percent")
 async def update_savings_percent(
     current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
-    savings_percent: int
+    savings_percent: int,
 ):
     db = BaseDatabridge.get_instance()
-    db.execute(f"UPDATE users SET savings_percent = {savings_percent} WHERE id = {current_user.id}")
+    db.execute(
+        f"UPDATE users SET savings_percent = {savings_percent} WHERE id = {current_user.id}"
+    )
     return {"message": "Savings percent updated successfully"}

@@ -23,6 +23,11 @@ import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import TheaterComedyIcon from "@mui/icons-material/TheaterComedy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WorkIcon from "@mui/icons-material/Work";
+import HandymanIcon from "@mui/icons-material/Handyman";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import SyncAltIcon from "@mui/icons-material/SyncAlt";
+import FlightIcon from "@mui/icons-material/Flight";
+import CategoryIcon from "@mui/icons-material/Category";
 import { TransactionDialog } from "./components/custom/TransactionDialog";
 import { SpendSettingsDialog } from "./components/custom/SpendSettingsDialog";
 import { useNavigate } from "react-router-dom";
@@ -262,7 +267,7 @@ function TransactionItem({
         {transaction.category == "Housing" && (
           <HouseIcon sx={{ color: transaction.backgroundColor }} />
         )}
-        {transaction.category == "Food" && (
+        {(transaction.category == "Food" || transaction.category == "Food and Drink") && (
           <FastfoodIcon sx={{ color: transaction.backgroundColor }} />
         )}
         {transaction.category == "Transportation" && (
@@ -271,14 +276,29 @@ function TransactionItem({
         {transaction.category == "Utilities" && (
           <WaterDropIcon sx={{ color: transaction.backgroundColor }} />
         )}
-        {transaction.category == "Entertainment" && (
+        {(transaction.category == "Entertainment" || transaction.category == "Recreation") && (
           <TheaterComedyIcon sx={{ color: transaction.backgroundColor }} />
         )}
         {transaction.category == "Work" && (
           <WorkIcon sx={{ color: transaction.backgroundColor }} />
         )}
+        {transaction.category == "Service" && (
+          <HandymanIcon sx={{ color: transaction.backgroundColor }} />
+        )}
+        {transaction.category == "Shops" && (
+          <StorefrontIcon sx={{ color: transaction.backgroundColor }} />
+        )}
+        {transaction.category == "Transfer" && (
+          <SyncAltIcon sx={{ color: transaction.backgroundColor }} />
+        )}
+        {transaction.category == "Travel" && (
+          <FlightIcon sx={{ color: transaction.backgroundColor }} />
+        )}
+        {transaction.category == "Other" && (
+          <CategoryIcon sx={{ color: transaction.backgroundColor }} />
+        )}
         <div className="flex flex-col">
-          <p className="text-lg font-bold">{transaction.title}</p>
+          <p className="text-lg font-bold" style={{maxWidth: "21rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{transaction.title}</p>
           <p className="text-sm text-gray-500">{transaction.date}</p>
         </div>
       </div>
@@ -289,7 +309,7 @@ function TransactionItem({
             color: transaction.type === "income" ? "#22c55e" : "#ef4444",
           }}
         >
-          {transaction.type === "income" ? "+" : "-"}${transaction.amount}
+          {transaction.type === "income" ? "+" : "-"}${transaction.amount.toFixed(2)}
         </p>
         {isHovered && (
           <Button
@@ -353,10 +373,17 @@ function Overview() {
   const categories = {
     Housing: "#8884d8",
     Food: "#82ca9d",
+    "Food and Drink": "#82ca9d",
     Transportation: "#ffc658",
     Utilities: "#ff8042",
     Entertainment: "#26547D",
+    Recreation: "#26547D",
     Work: "#9c27b0",
+    Service: "#4a90e2",
+    Shops: "#f06292",
+    Transfer: "#7986cb",
+    Travel: "#ffd54f",
+    Other: "#90a4ae"
   };
 
   useEffect(() => {
@@ -832,7 +859,7 @@ function Overview() {
                       `${name} ${(percent * 100).toFixed(0)}%`
                     }
                   />
-                  <Tooltip formatter={(value) => `$${value}`} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
                   <Legend />
                 </RechartsChart>
               </ResponsiveContainer>

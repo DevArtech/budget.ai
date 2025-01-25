@@ -55,11 +55,12 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
+
 class PublicTokenExchangeRequest(BaseModel):
     name: str
     public_token: str
 
+
 class PlaidTransactionRequest(BaseModel):
     start_date: str
     end_date: str
-    

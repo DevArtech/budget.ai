@@ -84,7 +84,7 @@ export function PlaidConnect() {
                 description: `Successfully connected ${name}`,
               });
               // Redirect to overview or show success message
-              navigate("/");
+              navigate("/?new-account=true");
             }
           } catch (error) {
             console.error("Error exchanging public token:", error);

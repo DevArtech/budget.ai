@@ -47,14 +47,18 @@ class SpendService:
         }
 
         prorated_expenses = fixed_expenses.apply(
-            lambda row: (row["amount"] * 14) / recurrence_to_days[row["recurrence"]], 
-            axis=1
+            lambda row: (row["amount"] * 14) / recurrence_to_days[row["recurrence"]],
+            axis=1,
         )
         total_fixed = prorated_expenses.sum()
 
         paycheck_amount = paycheck["amount"].iloc[0]
 
-        remaining_income = paycheck_amount - total_fixed - (paycheck_amount * (float(user.savings_percent) / 100))
+        remaining_income = (
+            paycheck_amount
+            - total_fixed
+            - (paycheck_amount * (float(user.savings_percent) / 100))
+        )
         return remaining_income / 2
 
     def get_spend_over_time(self, user: UserInDB, start_date: date, end_date: date):
