@@ -10,5 +10,5 @@ To setup, ensure you have NPM, Pipenv, and SQLite installed and configured.
 2. Generate a JWT Secret Key with `openssl rand -hex 32`
 3. Run `npm build`
 4. Run `pipenv install -d`
-5. Run `npm run dev` to start up the frontend
-6. In a separate terminal, run `pipenv run start` to start up the backend.
+5. Run `pipenv run frontend` to start up the frontend
+6. In a separate terminal, run `pipenv run server` to start up the backend.

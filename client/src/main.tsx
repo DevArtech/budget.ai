@@ -9,6 +9,7 @@ import Transactions from "./pages/Transactions.tsx";
 import Login from "./pages/Login.tsx";
 import { AssistantInterface } from "./components/custom/AssistantInterface.tsx";
 import { Toaster } from "@/components/ui/toaster";
+import { PlaidConnect } from "./components/custom/PlaidConnect.tsx";
 
 // Cleanup function to clear assistant history
 const clearAssistantHistory = async () => {
@@ -44,6 +45,7 @@ const AppContent = () => {
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/connect-bank" element={<PlaidConnect />} />
       </Routes>
       {!isLoginPage && <AssistantInterface />}
     </>

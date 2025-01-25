@@ -58,6 +58,11 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
                   <NavigationMenuLink>Transactions</NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/connect-bank">
+                  <NavigationMenuLink>Connect Bank</NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
             </>
           )}
           <NavigationMenuItem className={styles.login}>
