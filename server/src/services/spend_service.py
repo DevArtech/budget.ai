@@ -46,9 +46,8 @@ class SpendService:
             "annually": 365,
         }
 
-        prorated_expenses = fixed_expenses.apply(
-            lambda row: (row["amount"] * 14) / recurrence_to_days[row["recurrence"]],
-            axis=1,
+        prorated_expenses = fixed_expenses["amount"].apply(
+            lambda amount: (amount * 14) / recurrence_to_days[fixed_expenses.loc[amount.index, "recurrence"]],
         )
         total_fixed = prorated_expenses.sum()
 

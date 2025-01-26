@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from typing import Annotated
+from datetime import datetime
 
 from server.src.databridge.plaid_databridge import PlaidDatabridge
 from server.src.databridge.base_databridge import BaseDatabridge
@@ -64,7 +65,10 @@ async def exchange_public_token(
 
     # Get transactions
     transactions = PlaidService().get_transactions(
-        PlaidTransactionRequest(start_date="2024-01-01", end_date="2025-01-24"),
+        PlaidTransactionRequest(
+            start_date="2000-01-01",
+            end_date=datetime.now().strftime("%Y-%m-%d")
+        ),
         current_user,
     )
     for transaction in transactions[token.name]:
@@ -121,3 +125,83 @@ async def get_balance(
     ],
 ):
     return {"account": PlaidService().get_balance(account_id, current_user)}
+
+@router.post("/sync-transactions")
+async def sync_transactions(
+    current_user: Annotated[
+        UserInDB, Depends(AuthenticationService.get_current_active_user)
+    ],
+):
+    db = BaseDatabridge.get_instance()
+
+    ids = db.query(
+        "SELECT id FROM accounts WHERE user_id = ?",
+        (current_user.id, ),
+    ).to_dict(orient="records")
+
+
+    for id in ids:
+        account_id = id["id"]
+        transactions = PlaidService().get_transactions(
+            PlaidTransactionRequest(
+                start_date="2000-01-01",
+                end_date=datetime.now().strftime("%Y-%m-%d")
+            ),
+            current_user,
+        )
+        for institution, transaction_list in transactions.items():
+            if transaction_list[0].get("budget_ai_id") == account_id:
+                for transaction in transaction_list:
+                    if transaction.get("category") and len(transaction.get("category")) > 0:
+                        category = transaction.get("category")[0]
+                    else:
+                        category = "Other"
+
+                    if transaction["amount"] < 0:
+                        # Check if income transaction already exists
+                        existing = db.query(
+                            "SELECT id FROM income WHERE title = ? AND amount = ? AND date = ? AND category = ? AND account_id = ?",
+                            (
+                                transaction["name"],
+                                -float(transaction["amount"]),
+                                transaction["date"],
+                                category,
+                                account_id,
+                            ),
+                        )
+                        
+                        if existing.empty:
+                            db.execute(
+                                "INSERT INTO income (title, amount, date, category, account_id) VALUES (?, ?, ?, ?, ?)",
+                                (
+                                    transaction["name"],
+                                    -float(transaction["amount"]),
+                                    transaction["date"],
+                                    category,
+                                    account_id,
+                                ),
+                            )
+                    else:
+                        # Check if expense transaction already exists
+                        existing = db.query(
+                            "SELECT id FROM expenses WHERE title = ? AND amount = ? AND date = ? AND category = ? AND account_id = ?",
+                            (
+                                transaction["name"],
+                                float(transaction["amount"]),
+                                transaction["date"],
+                                category,
+                                account_id,
+                            ),
+                        )
+                        
+                        if existing.empty:
+                            db.execute(
+                                "INSERT INTO expenses (title, amount, date, category, account_id) VALUES (?, ?, ?, ?, ?)",
+                                (
+                                    transaction["name"],
+                                    float(transaction["amount"]),
+                                    transaction["date"],
+                                    category,
+                                    account_id,
+                                ),
+                            )

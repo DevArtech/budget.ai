@@ -57,3 +57,12 @@
   border-radius: 0.5rem;
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
 }
+
+.user {
+  background-color: transparent;
+  padding: 0;
+}
+
+.user:hover {
+  border: 1px solid transparent;
+}

@@ -12,12 +12,12 @@ class PlaidService:
         self, transaction_request: PlaidTransactionRequest, current_user: UserInDB
     ):
         tokens = self.db.query(
-            "SELECT name, key FROM tokens WHERE user_id = ?", (current_user.id,)
+            "SELECT id, name, key FROM tokens WHERE user_id = ?", (current_user.id,)
         ).to_dict(orient="records")
         transactions = {}
         for row in tokens:
             transactions[row["name"]] = [
-                transaction.to_dict()
+                {**transaction.to_dict(), "budget_ai_id": row["id"]}
                 for transaction in self.plaid.get_transactions(
                     row["key"], transaction_request
                 )

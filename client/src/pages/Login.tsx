@@ -18,6 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -53,6 +54,15 @@ export default function Login() {
 
       // Store the token
       localStorage.setItem("token", response.data.access_token);
+
+      // Sync transactions
+      setIsSyncing(true);
+      await axios.post("http://localhost:8000/plaid/sync-transactions", null, {
+        headers: {
+          Authorization: `Bearer ${response.data.access_token}`,
+        },
+      });
+      setIsSyncing(false);
 
       toast({
         title: "Login successful",
@@ -164,7 +174,7 @@ export default function Login() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? (isSyncing ? "Syncing transactions..." : "Logging in...") : "Login"}
                 </Button>
               </form>
             </TabsContent>
