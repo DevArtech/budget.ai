@@ -48,7 +48,9 @@ class BaseDatabridge:
                     full_name TEXT NOT NULL,
                     email TEXT NOT NULL UNIQUE,
                     hashed_password TEXT NOT NULL,
-                    disabled INTEGER NOT NULL DEFAULT 0
+                    disabled INTEGER NOT NULL DEFAULT 0,
+                    spend_warning INTEGER DEFAULT 20,
+                    savings_percent INTEGER DEFAULT 10
                 );
             """
             )
@@ -58,7 +60,8 @@ class BaseDatabridge:
                 """
                 CREATE TABLE expenses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT NOT NULL, amount REAL NOT NULL,
+                    title TEXT NOT NULL,
+                    amount REAL NOT NULL,
                     date TEXT NOT NULL,
                     category TEXT NOT NULL,
                     recurrence TEXT,
@@ -90,6 +93,34 @@ class BaseDatabridge:
                     balance REAL NOT NULL DEFAULT 0.0,
                     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
                     user_id INTEGER NOT NULL
+                );
+            """
+            )
+
+            # Create tokens table
+            cursor.execute(
+                """
+                CREATE TABLE tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    key TEXT NOT NULL
+                );
+            """
+            )
+
+            # Create goals table
+            cursor.execute(
+                """
+                CREATE TABLE goals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    amount REAL NOT NULL,
+                    date TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    completed INTEGER NOT NULL DEFAULT 0,
+                    progress REAL DEFAULT 0
                 );
             """
             )
