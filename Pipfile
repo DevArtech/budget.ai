@@ -25,6 +25,7 @@ black = "*"
 python_version = "3.11"
 
 [scripts]
+tailwind = "npx @tailwindcss/cli -i ./client/src/input.css -o ./client/src/output.css --watch"
 frontend = "npm run dev"
 server = "uvicorn server.src.main:app --reload"
 format = "black ."

@@ -6,6 +6,7 @@ import NavBar from "./components/custom/NavBar.tsx";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import Accounts from "./pages/Accounts.tsx";
 import Transactions from "./pages/Transactions.tsx";
+import Goals from "./pages/Goals.tsx";
 import Login from "./pages/Login.tsx";
 import { AssistantInterface } from "./components/custom/AssistantInterface.tsx";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,6 +45,7 @@ const AppContent = () => {
         <Route path="/" element={<Overview />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/transactions" element={<Transactions />} />
+        <Route path="/goals" element={<Goals />} />
         <Route path="/login" element={<Login />} />
         <Route path="/connect-bank" element={<PlaidConnect />} />
       </Routes>
