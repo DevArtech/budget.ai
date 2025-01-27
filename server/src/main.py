@@ -9,6 +9,7 @@ from server.src.routers.accounts import router as accounts_router
 from server.src.routers.spend import router as spend_router
 from server.src.routers.assistant import router as assistant_router
 from server.src.routers.plaid import router as plaid_router
+from server.src.routers.goals import router as goals_router
 
 
 app = FastAPI()
@@ -29,3 +30,4 @@ app.include_router(income_router)
 app.include_router(accounts_router)
 app.include_router(spend_router)
 app.include_router(assistant_router)
+app.include_router(goals_router)

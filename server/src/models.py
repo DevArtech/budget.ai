@@ -64,3 +64,12 @@ class PublicTokenExchangeRequest(BaseModel):
 class PlaidTransactionRequest(BaseModel):
     start_date: str
     end_date: str
+
+class Goal(BaseModel):
+    name: str
+    description: str
+    amount: float
+    deadline: date
+    completed: bool = False
+    progress: float = 0
+

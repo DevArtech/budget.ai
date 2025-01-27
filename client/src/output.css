@@ -710,6 +710,10 @@ video {
   top: 50%;
 }
 
+.top-2 {
+  top: 0.5rem;
+}
+
 .top-4 {
   top: 1rem;
 }
@@ -759,6 +763,18 @@ video {
 .my-1 {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
 }
 
 .mb-6 {
@@ -893,6 +909,10 @@ video {
   max-height: 100vh;
 }
 
+.min-h-\[60px\] {
+  min-height: 60px;
+}
+
 .min-h-screen {
   min-height: 100vh;
 }
@@ -923,6 +943,10 @@ video {
 
 .w-4 {
   width: 1rem;
+}
+
+.w-48 {
+  width: 12rem;
 }
 
 .w-6 {
@@ -963,6 +987,10 @@ video {
 
 .w-\[300px\] {
   width: 300px;
+}
+
+.w-\[97vw\] {
+  width: 97vw;
 }
 
 .w-auto {
@@ -1196,6 +1224,10 @@ video {
   white-space: nowrap;
 }
 
+.rounded {
+  border-radius: 0.25rem;
+}
+
 .rounded-\[inherit\] {
   border-radius: inherit;
 }
@@ -1323,6 +1355,10 @@ video {
   background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));
 }
 
+.bg-zinc-900\/20 {
+  background-color: rgb(24 24 27 / 0.2);
+}
+
 .p-0 {
   padding: 0px;
 }
@@ -1345,6 +1381,10 @@ video {
 
 .p-6 {
   padding: 1.5rem;
+}
+
+.p-8 {
+  padding: 2rem;
 }
 
 .p-\[1px\] {
@@ -1396,12 +1436,26 @@ video {
   padding-bottom: 0.5rem;
 }
 
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
 .pb-4 {
   padding-bottom: 1rem;
 }
 
 .pl-2 {
   padding-left: 0.5rem;
+}
+
+.pl-7 {
+  padding-left: 1.75rem;
 }
 
 .pr-4 {
@@ -1422,6 +1476,14 @@ video {
 
 .pt-1 {
   padding-top: 0.25rem;
+}
+
+.pt-24 {
+  padding-top: 6rem;
+}
+
+.pt-6 {
+  padding-top: 1.5rem;
 }
 
 .text-left {
@@ -1522,6 +1584,11 @@ video {
 .text-green-600 {
   --tw-text-opacity: 1;
   color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+
+.text-orange-500 {
+  --tw-text-opacity: 1;
+  color: rgb(249 115 22 / var(--tw-text-opacity, 1));
 }
 
 .text-red-500 {
@@ -1792,6 +1859,10 @@ video {
 
 .hover\:opacity-100:hover {
   opacity: 1;
+}
+
+.hover\:opacity-90:hover {
+  opacity: 0.9;
 }
 
 .hover\:shadow-lg:hover {
@@ -2317,6 +2388,10 @@ video {
 .dark\:bg-zinc-50:is(.dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(250 250 250 / var(--tw-bg-opacity, 1));
+}
+
+.dark\:bg-zinc-50\/20:is(.dark *) {
+  background-color: rgb(250 250 250 / 0.2);
 }
 
 .dark\:bg-zinc-800:is(.dark *) {

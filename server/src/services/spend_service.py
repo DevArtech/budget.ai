@@ -37,6 +37,17 @@ class SpendService:
             (user.id,),
         )
 
+        # Get active goals
+        goals = self.db.query(
+            """
+            SELECT amount, date, progress
+            FROM goals
+            WHERE user_id = ?
+            AND completed = 0
+            """,
+            (user.id,),
+        )
+
         recurrence_to_days = {
             "daily": 1,
             "weekly": 7,
@@ -51,12 +62,27 @@ class SpendService:
         )
         total_fixed = prorated_expenses.sum()
 
+        # Calculate required goal contributions
+        total_goal_contributions = 0
+        if not goals.empty:
+            today = datetime.now().date()
+            for _, goal in goals.iterrows():
+                remaining_amount = goal["amount"] - (goal["amount"] * goal["progress"])
+                goal_date = datetime.strptime(goal["date"], "%Y-%m-%d").date()
+                days_until_deadline = (goal_date - today).days
+                if days_until_deadline > 0:
+                    # Convert to bi-weekly contribution since we're working with bi-weekly paycheck
+                    daily_contribution = remaining_amount / days_until_deadline
+                    total_goal_contributions += daily_contribution * 14
+
         paycheck_amount = paycheck["amount"].iloc[0]
+        savings_amount = paycheck_amount * (float(user.savings_percent) / 100)
 
         remaining_income = (
             paycheck_amount
             - total_fixed
-            - (paycheck_amount * (float(user.savings_percent) / 100))
+            - savings_amount
+            - max(0, total_goal_contributions)
         )
         return remaining_income / 2
 
