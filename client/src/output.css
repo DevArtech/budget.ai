@@ -885,6 +885,10 @@ video {
   height: 175px;
 }
 
+.h-\[300px\] {
+  height: 300px;
+}
+
 .h-\[var\(--radix-navigation-menu-viewport-height\)\] {
   height: var(--radix-navigation-menu-viewport-height);
 }
@@ -899,6 +903,26 @@ video {
 
 .h-px {
   height: 1px;
+}
+
+.h-\[25vh\] {
+  height: 25vh;
+}
+
+.h-\[35vh\] {
+  height: 35vh;
+}
+
+.h-\[50vh\] {
+  height: 50vh;
+}
+
+.h-\[55vh\] {
+  height: 55vh;
+}
+
+.h-\[99\%\] {
+  height: 99%;
 }
 
 .max-h-96 {

@@ -18,31 +18,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import styles from "./Goals.module.css";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-interface Goal {
-  id?: number;
-  name: string;
-  description: string;
-  amount: number;
-  progress?: number;
-  deadline: Date;
-  completed?: boolean;
-}
-
-interface BackendGoal {
-  id: number;
-  name: string;
-  description: string;
-  amount: number;
-  progress: number;
-  date: string;
-  completed: boolean;
-}
+import { useStore } from "@/store/useStore";
+import type { Goal } from "@/store/useStore";
 
 const Goals: React.FC = () => {
   const navigate = useNavigate();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState<Goal>({
+  const [newGoal, setNewGoal] = useState<Omit<Goal, "id">>({
     name: "",
     description: "",
     amount: 0,
@@ -57,163 +38,65 @@ const Goals: React.FC = () => {
   const [newGoalDialogOpen, setNewGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
 
-  const fetchGoals = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/goals", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch goals");
-      }
-
-      const data = await response.json();
-      setGoals(
-        data.map((goal: BackendGoal) => ({
-          ...goal,
-          deadline: new Date(goal.date),
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching goals:", error);
-    }
-  };
+  const {
+    goals,
+    isLoading,
+    fetchGoals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    updateGoalProgress,
+  } = useStore();
 
   useEffect(() => {
     fetchGoals();
-  }, [navigate]);
+  }, []);
 
   const handleCreateGoal = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const formattedDeadline = newGoal.deadline.toISOString().split("T")[0];
-      const response = await fetch("http://localhost:8000/goals", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...newGoal,
-          deadline: formattedDeadline,
-          date: undefined,
-        }),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (response.ok) {
-        await fetchGoals();
-        setNewGoal({
-          name: "",
-          description: "",
-          amount: 0,
-          progress: 0,
-          deadline: new Date(),
-          completed: false,
-        });
-        setNewGoalDialogOpen(false);
-      }
-    } catch (error) {
-      console.error("Error creating goal:", error);
+    await addGoal(newGoal);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
     }
+    setNewGoal({
+      name: "",
+      description: "",
+      amount: 0,
+      progress: 0,
+      deadline: new Date(),
+      completed: false,
+    });
+    setNewGoalDialogOpen(false);
   };
 
   const handleUpdateGoal = async () => {
     if (!selectedGoal?.id) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const formattedDeadline = selectedGoal.deadline
-        .toISOString()
-        .split("T")[0];
-      const response = await fetch(
-        `http://localhost:8000/goals/${selectedGoal.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...selectedGoal,
-            deadline: formattedDeadline,
-            date: undefined,
-          }),
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (response.ok) {
-        await fetchGoals();
-        setSelectedGoal(null);
-        setEditGoalDialogOpen(false);
-      }
-    } catch (error) {
-      console.error("Error updating goal:", error);
+    await updateGoal(selectedGoal);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
     }
+    setSelectedGoal(null);
+    setEditGoalDialogOpen(false);
   };
 
   const handleProgressUpdate = async () => {
-    if (!progressUpdateGoal?.id) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8000/goals/${progressUpdateGoal.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...progressUpdateGoal,
-            date: progressUpdateGoal.deadline.toISOString(),
-          }),
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (response.ok) {
-        await fetchGoals();
-        setProgressUpdateGoal(null);
-      }
-    } catch (error) {
-      console.error("Error updating goal progress:", error);
+    if (!progressUpdateGoal?.id || progressUpdateGoal.progress === undefined)
+      return;
+    await updateGoalProgress(
+      progressUpdateGoal.id,
+      progressUpdateGoal.progress
+    );
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
     }
+    setProgressUpdateGoal(null);
   };
 
   const calculateProgress = (savedAmount: number = 0, targetAmount: number) => {
     return (savedAmount / targetAmount) * 100;
   };
-
-  useEffect(() => {
-    console.log(newGoal);
-  }, [newGoal]);
 
   const getDeadlineStatus = (deadline: Date) => {
     const today = new Date();
@@ -243,6 +126,14 @@ const Goals: React.FC = () => {
     };
   };
 
+  if (isLoading && goals.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        Loading goals...
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8 pl-7 pr-8 pt-24 w-[100vw]">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-[97vw]">
@@ -269,29 +160,10 @@ const Goals: React.FC = () => {
                     className="delete-button h-8 w-8 p-0 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      try {
-                        const token = localStorage.getItem("token");
-                        const response = await fetch(
-                          `http://localhost:8000/goals/${goal.id}`,
-                          {
-                            method: "DELETE",
-                            headers: {
-                              Authorization: `Bearer ${token}`,
-                            },
-                          }
-                        );
-
-                        if (response.status === 401) {
-                          localStorage.removeItem("token");
-                          navigate("/login");
-                          return;
-                        }
-
-                        if (response.ok) {
-                          await fetchGoals();
-                        }
-                      } catch (error) {
-                        console.error("Error deleting goal:", error);
+                      if (!goal.id) return;
+                      await deleteGoal(goal.id);
+                      if (!localStorage.getItem("token")) {
+                        navigate("/login");
                       }
                     }}
                   >

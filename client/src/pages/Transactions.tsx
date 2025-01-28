@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionDialog } from "@/components/custom/TransactionDialog";
 import {
@@ -27,25 +27,8 @@ import { CalendarIcon } from "@radix-ui/react-icons";
 import { format } from "date-fns";
 import "./Transactions.module.css";
 import { useNavigate } from "react-router-dom";
-
-interface Transaction {
-  id: number;
-  title: string;
-  date: string;
-  amount: number;
-  category: string;
-  type: "income" | "expense";
-  account_id: number;
-  backgroundColor?: string;
-}
-
-interface Account {
-  id: number;
-  name: string;
-  type: string;
-  balance: number;
-  last_updated: string;
-}
+import { useStore } from "@/store/useStore";
+import { Transaction } from "@/types";
 
 function TransactionItem({
   transaction,
@@ -113,9 +96,6 @@ function TransactionItem({
 
 export default function Transactions() {
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -125,14 +105,33 @@ export default function Transactions() {
     to: undefined,
   });
 
-  const categories = {
-    Housing: "#FF6B6B",
-    Food: "#4ECDC4",
-    Transportation: "#45B7D1",
-    Utilities: "#96CEB4",
-    Entertainment: "#FFEEAD",
-    Work: "#D4A5A5",
-  };
+  const {
+    transactions,
+    accounts,
+    selectedAccountId,
+    isLoading,
+    accountsLoaded,
+    transactionsLoaded,
+    fetchAccounts,
+    fetchAccountTransactions,
+    addTransaction,
+    deleteTransaction,
+    setSelectedAccountId,
+  } = useStore();
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // Only fetch accounts if not already loaded
+      if (!accountsLoaded) {
+        await fetchAccounts();
+      }
+      // Only fetch transactions if not already loaded
+      if (!transactionsLoaded) {
+        await fetchAccountTransactions("all");
+      }
+    };
+    loadInitialData();
+  }, [accountsLoaded, transactionsLoaded]);
 
   const categorizeTransactions = (transactions: Transaction[]) => {
     const now = new Date();
@@ -176,75 +175,6 @@ export default function Transactions() {
     };
   };
 
-  const fetchTransactions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      let url = "http://localhost:8000/transactions";
-      if (selectedAccount !== "all") {
-        url = `http://localhost:8000/accounts/${selectedAccount}/transactions`;
-      }
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch transactions");
-      }
-
-      const data = await response.json();
-      const transactionsWithColors = data.map((t: Transaction) => ({
-        ...t,
-        backgroundColor:
-          categories[t.category as keyof typeof categories] || "#8884d8",
-      }));
-      setTransactions(transactionsWithColors);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    }
-  };
-
-  const fetchAccounts = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/accounts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts");
-      }
-
-      const data = await response.json();
-      setAccounts(data);
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, [navigate]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [selectedAccount, navigate]);
-
   const handleNewTransaction = async (transaction: {
     title: string;
     amount: number;
@@ -260,65 +190,26 @@ export default function Transactions() {
       | "quarterly"
       | "annually";
   }) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8000/${transaction.isIncome ? "income" : "expenses"}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(transaction),
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to add transaction");
-      }
-
-      fetchTransactions();
-    } catch (error) {
-      console.error("Error adding transaction:", error);
+    await addTransaction(transaction);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
     }
   };
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
-    try {
-      const token = localStorage.getItem("token");
-      const endpoint = transaction.type === "income" ? "income" : "expenses";
-      const response = await fetch(
-        `http://localhost:8000/${endpoint}/${transaction.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to delete transaction");
-      }
-
-      fetchTransactions();
-    } catch (error) {
-      console.error("Error deleting transaction:", error);
+    await deleteTransaction(transaction.id, transaction.type);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
     }
   };
+
+  if (isLoading && transactions.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        Loading transactions...
+      </div>
+    );
+  }
 
   return (
     <div
@@ -346,8 +237,8 @@ export default function Transactions() {
             <div className="flex flex-col gap-2">
               <Label>Filter by Account</Label>
               <Select
-                value={selectedAccount}
-                onValueChange={setSelectedAccount}
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Select an account" />
@@ -441,7 +332,7 @@ export default function Transactions() {
             <CardTitle>Recent Transactions</CardTitle>
             <p className="text-sm text-gray-500">Last 3 days</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[55vh] overflow-y-auto">
             <div className="space-y-4">
               {transactions.length === 0 ? (
                 <p className="text-center text-gray-500">
@@ -467,7 +358,7 @@ export default function Transactions() {
             <CardTitle>Past Transactions</CardTitle>
             <p className="text-sm text-gray-500">Older than 3 days</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[55vh] overflow-y-auto">
             <div className="space-y-4">
               {transactions.length === 0 ? (
                 <p className="text-center text-gray-500">
@@ -491,7 +382,7 @@ export default function Transactions() {
             <CardTitle>Pending Transactions</CardTitle>
             <p className="text-sm text-gray-500">Future dates</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[55vh] overflow-y-auto">
             <div className="space-y-4">
               {transactions.length === 0 ? (
                 <p className="text-center text-gray-500">

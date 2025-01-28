@@ -204,6 +204,27 @@ class SpendTool(BaseTool):
         }
 
 
+class GoalsTool(BaseTool):
+    """Tool for getting user's financial goals"""
+
+    user_id: int
+    name: str = "get_goals"
+    description: str = (
+        "Use this tool to get information about the user's financial goals. This will return all goals including their name, description, target amount, target date, completion status, and current progress."
+    )
+
+    db: ClassVar[BaseDatabridge] = BaseDatabridge.get_instance()
+
+    def _run(self, *args, **kwargs) -> str:
+        goals = self.db.query(
+            "SELECT * FROM goals WHERE user_id = ?", 
+            (self.user_id,)
+        )
+        if goals.empty:
+            return "No goals found for this user."
+        return goals.to_dict(orient="records")
+
+
 class AssistantService:
     def __init__(self):
         self.llm = ChatGroq(
@@ -221,6 +242,7 @@ class AssistantService:
             "get_accounts": "Retrieving account data...",
             "get_transactions_per_account": "Retrieving transaction data for {account_name}...",
             "get_spend_details": "Retrieving spend data...",
+            "get_goals": "Retrieving goals data...",
         }
 
         # Map tools to their preprocessing functions
@@ -253,6 +275,7 @@ class AssistantService:
             accounts_tool = AccountsTool(user_id=user.id)
             transactions_per_account_tool = TransactionsPerAccountTool(user_id=user.id)
             spend_tool = SpendTool(user_id=user.id)
+            goals_tool = GoalsTool(user_id=user.id)
 
             tools = [
                 Tool(
@@ -279,6 +302,11 @@ class AssistantService:
                     name=spend_tool.name,
                     description=spend_tool.description,
                     func=spend_tool._run,
+                ),
+                Tool(
+                    name=goals_tool.name,
+                    description=goals_tool.description,
+                    func=goals_tool._run,
                 ),
             ]
 

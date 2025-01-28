@@ -7,7 +7,7 @@ class Account(BaseModel):
     name: str
     type: str
     balance: float
-    last_updated: date
+    last_updated: Optional[date] = date.today()
 
 
 class Transaction(BaseModel):
@@ -69,7 +69,7 @@ class Goal(BaseModel):
     name: str
     description: str
     amount: float
-    deadline: date
+    date: date
     completed: bool = False
     progress: float = 0
 

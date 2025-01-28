@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -17,58 +19,55 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import styles from "../../pages/Accounts.module.css";
-import { useNavigate } from "react-router-dom";
 
 interface AccountDialogProps {
-  onAccountCreated: () => void;
+  onAccountCreated: (account: {
+    name: string;
+    type: string;
+    balance: number;
+  }) => Promise<void>;
 }
 
 export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [otherType, setOtherType] = useState("");
   const [balance, setBalance] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    if (!type) {
+      setError("Please select an account type");
+      return;
+    }
+
+    if (type === "other" && !otherType) {
+      setError("Please specify the account type");
+      return;
+    }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/accounts/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name,
-          type: type === "other" ? otherType : type,
-          balance: parseFloat(balance),
-          last_updated: new Date().toISOString().split("T")[0],
-        }),
+      const finalType = type === "other" ? otherType : type;
+      await onAccountCreated({
+        name,
+        type: finalType,
+        balance: parseFloat(balance),
       });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to create account");
-      }
 
       // Reset form and close dialog
       setName("");
       setType("");
       setOtherType("");
       setBalance("");
+      setError("");
       setOpen(false);
-      onAccountCreated();
     } catch (error) {
       console.error("Error creating account:", error);
+      setError("Failed to create account. Please try again.");
     }
   };
 
@@ -85,6 +84,9 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
       <DialogContent style={{ backgroundColor: "black" }}>
         <DialogHeader>
           <DialogTitle>Create New Account</DialogTitle>
+          <DialogDescription>
+            Add a new account to track your finances.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -98,12 +100,18 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Account Type</Label>
-            <Select value={type} onValueChange={setType} required>
+            <Select
+              value={type}
+              onValueChange={(value) => {
+                setType(value);
+                setError("");
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cash">Spending</SelectItem>
+                <SelectItem value="spending">Spending</SelectItem>
                 <SelectItem value="checking">Checking</SelectItem>
                 <SelectItem value="savings">Savings</SelectItem>
                 <SelectItem value="credit">Credit</SelectItem>
@@ -116,8 +124,10 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
                 <Input
                   placeholder="Specify account type"
                   value={otherType}
-                  onChange={(e) => setOtherType(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setOtherType(e.target.value);
+                    setError("");
+                  }}
                 />
               </div>
             )}
@@ -139,9 +149,12 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
               />
             </div>
           </div>
-          <Button type="submit" className="w-full">
-            Create Account
-          </Button>
+          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+          <DialogFooter>
+            <Button type="submit" className="w-full">
+              Create Account
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

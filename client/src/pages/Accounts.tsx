@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import styles from "./Accounts.module.css";
@@ -13,24 +13,7 @@ import {
 } from "recharts";
 import { AccountDialog } from "@/components/custom/AccountDialog";
 import { useNavigate } from "react-router-dom";
-
-interface Transaction {
-  id: number;
-  title: string;
-  date: string;
-  amount: number;
-  type: "income" | "expense";
-  account_id: number;
-}
-
-interface Account {
-  id: number;
-  name: string;
-  type: string;
-  balance: number;
-  last_updated: string;
-  transactions?: Transaction[];
-}
+import { useStore } from "@/store/useStore";
 
 const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
@@ -50,81 +33,33 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
 
 export default function Accounts() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { accounts, isLoading, fetchAccounts, addAccount } = useStore();
 
-  const fetchAccounts = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/accounts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
+  useEffect(() => {
+    const loadAccounts = async () => {
+      await fetchAccounts();
+      if (!localStorage.getItem("token")) {
         navigate("/login");
-        return;
       }
+    };
+    loadAccounts();
+  }, [fetchAccounts, navigate]);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts");
-      }
-
-      const data = await response.json();
-
-      // Fetch transactions for each account
-      const accountsWithTransactions = await Promise.all(
-        data.map(async (account: Account) => {
-          const transactionsResponse = await fetch(
-            `http://localhost:8000/accounts/${account.id}/transactions`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (transactionsResponse.status === 401) {
-            localStorage.removeItem("token");
-            navigate("/login");
-            return account;
-          }
-
-          if (transactionsResponse.ok) {
-            const transactions = await transactionsResponse.json();
-            return { ...account, transactions };
-          }
-          return account;
-        })
-      );
-
-      setAccounts(accountsWithTransactions.filter(Boolean));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
+  const handleAccountCreated = async (account: {
+    name: string;
+    type: string;
+    balance: number;
+  }) => {
+    await addAccount(account);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
     }
   };
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [navigate]);
-
-  if (loading) {
+  if (isLoading && accounts.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         Loading accounts...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-red-500 flex items-center justify-center h-full">
-        {error}
       </div>
     );
   }
@@ -243,7 +178,7 @@ export default function Accounts() {
           </Card>
         ))}
       </div>
-      <AccountDialog onAccountCreated={fetchAccounts} />
+      <AccountDialog onAccountCreated={handleAccountCreated} />
     </div>
   );
 }

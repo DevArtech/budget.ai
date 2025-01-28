@@ -136,11 +136,10 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 transaction-dialog"
+        className="transaction-dialog"
         style={{
           width: "600px",
           backgroundColor: "black",
-          top: "45%",
         }}
       >
         <DialogHeader>
