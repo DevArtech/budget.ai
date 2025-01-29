@@ -18,32 +18,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-interface Account {
-  id: number;
-  name: string;
-  type: string;
-  balance: number;
-  last_updated: string;
-}
-
-interface TransactionDialogProps {
-  onSubmit: (transaction: {
-    title: string;
-    amount: number;
-    date: string;
-    category: string;
-    isIncome: boolean;
-    account_id: number;
-    recurrence?:
-      | "daily"
-      | "weekly"
-      | "bi-weekly"
-      | "monthly"
-      | "quarterly"
-      | "annually";
-  }) => void;
-}
+import styles from "./TransactionDialog.module.css";
+import { TransactionDialogProps, Account } from "@/types";
 
 export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
   const navigate = useNavigate();
@@ -128,26 +104,17 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          style={{ width: "100%", height: "100%" }}
-          className="mt-4 new-transaction-button"
-        >
+        <Button className={styles.newTransactionButton}>
           New Transaction
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className="transaction-dialog"
-        style={{
-          width: "600px",
-          backgroundColor: "black",
-        }}
-      >
+      <DialogContent className={styles.transactionDialog}>
         <DialogHeader>
           <DialogTitle>Add New Transaction</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center space-x-4 gap-4">
-            <div className="flex items-center space-x-2">
+        <form onSubmit={handleSubmit} className={styles.formContainer}>
+          <div className={styles.checkboxContainer}>
+            <div className={styles.checkboxWrapper}>
               <Checkbox
                 id="income-mode"
                 checked={isIncome}
@@ -157,13 +124,12 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
                     setRecurrence(undefined);
                   }
                 }}
-                className="income-checkbox"
-                style={{ backgroundColor: "#111111" }}
+                className={styles.incomeCheckbox}
                 disabled={recurrence !== undefined && recurrence !== "unset"}
               />
               <Label htmlFor="income-mode">Income</Label>
             </div>
-            <div className="flex-1">
+            <div className={styles.selectContainer}>
               <Select
                 value={recurrence}
                 onValueChange={(value) => {
@@ -189,8 +155,8 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">
+          <div className={styles.formGroup}>
+            <label htmlFor="title" className={styles.formLabel}>
               Title
             </label>
             <Input
@@ -200,27 +166,25 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
               required
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="amount" className="text-sm font-medium">
+          <div className={styles.formGroup}>
+            <label htmlFor="amount" className={styles.formLabel}>
               Amount
             </label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                $
-              </span>
+            <div className={styles.amountInputWrapper}>
+              <span className={styles.currencySymbol}>$</span>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                style={{ paddingLeft: "1.25rem" }}
+                className={styles.amountInput}
                 required
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="date" className="text-sm font-medium">
+          <div className={styles.formGroup}>
+            <label htmlFor="date" className={styles.formLabel}>
               Date
             </label>
             <Input
@@ -230,8 +194,8 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="account" className="text-sm font-medium">
+          <div className={styles.formGroup}>
+            <label htmlFor="account" className={styles.formLabel}>
               Account
             </label>
             <Select
@@ -251,8 +215,8 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="category" className="text-sm font-medium">
+          <div className={styles.formGroup}>
+            <label htmlFor="category" className={styles.formLabel}>
               Category
             </label>
             <Select value={category} onValueChange={setCategory} required>
@@ -271,7 +235,7 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
           </div>
           <Button
             type="submit"
-            className="w-full"
+            className={styles.submitButton}
             disabled={!title.trim() || !amount || !category || !selectedAccount}
           >
             Add Transaction

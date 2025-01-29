@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TransactionDialog } from "@/components/custom/TransactionDialog";
+import { TransactionDialog } from "@/components/custom/TransactionDialog/TransactionDialog";
 import {
   Select,
   SelectContent,
@@ -9,13 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import HouseIcon from "@mui/icons-material/House";
-import FastfoodIcon from "@mui/icons-material/Fastfood";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-import WaterDropIcon from "@mui/icons-material/WaterDrop";
-import TheaterComedyIcon from "@mui/icons-material/TheaterComedy";
-import DeleteIcon from "@mui/icons-material/Delete";
-import WorkIcon from "@mui/icons-material/Work";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -29,70 +22,7 @@ import "./Transactions.module.css";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/store/useStore";
 import { Transaction } from "@/types";
-
-function TransactionItem({
-  transaction,
-  onDelete,
-}: {
-  transaction: Transaction;
-  onDelete: () => void;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div
-      style={{ width: "100%" }}
-      className="transaction-item"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex flex-row items-center gap-4">
-        {transaction.category === "Housing" && (
-          <HouseIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category === "Food" && (
-          <FastfoodIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category === "Transportation" && (
-          <DirectionsBusIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category === "Utilities" && (
-          <WaterDropIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category === "Entertainment" && (
-          <TheaterComedyIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category === "Work" && (
-          <WorkIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        <div className="flex flex-col">
-          <p className="text-lg font-bold">{transaction.title}</p>
-          <p className="text-sm text-gray-500">{transaction.date}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <p
-          className="text-lg font-bold"
-          style={{
-            color: transaction.type === "income" ? "#22c55e" : "#ef4444",
-          }}
-        >
-          {transaction.type === "income" ? "+" : "-"}${transaction.amount}
-        </p>
-        {isHovered && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="delete-button h-8 w-8 p-0"
-            onClick={onDelete}
-          >
-            <DeleteIcon color="error" fontSize="large" />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
+import TransactionItem from "@/components/custom/TransactionItem/TransactionItem";
 
 export default function Transactions() {
   const navigate = useNavigate();

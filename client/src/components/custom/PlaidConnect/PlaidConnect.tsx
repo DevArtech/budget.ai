@@ -2,10 +2,20 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import styles from "./PlaidConnect.module.css";
 
 declare global {
   interface Window {
-    Plaid: any;
+    Plaid: {
+      create: (config: {
+        token: string;
+        onSuccess: (publicToken: string, metadata: { institution: { name: string; }; }) => void;
+        onExit: (err: Error | null) => void;
+        onEvent: (eventName: string, metadata: unknown) => void;
+      }) => {
+        open: () => void;
+      };
+    };
   }
 }
 
@@ -63,9 +73,8 @@ export function PlaidConnect() {
     if (linkToken) {
       const handler = window.Plaid.create({
         token: linkToken,
-        onSuccess: async (_: string, metadata: any) => {
+        onSuccess: async (publicToken: string, metadata: { institution: { name: string; }; }) => {
           console.log("Success:", metadata);
-          const public_token = metadata.institution.public_token || metadata.public_token;
           const name = metadata.institution.name;
           try {
             const token = localStorage.getItem("token");
@@ -75,7 +84,7 @@ export function PlaidConnect() {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({ public_token, name }),
+              body: JSON.stringify({ public_token: publicToken, name }),
             });
 
             if (response.ok) {
@@ -83,20 +92,18 @@ export function PlaidConnect() {
                 title: "Account Connected",
                 description: `Successfully connected ${name}`,
               });
-              // Redirect to overview or show success message
               navigate("/?new-account=true");
             }
           } catch (error) {
             console.error("Error exchanging public token:", error);
           }
         },
-        onExit: (err: Error | null, metadata: any) => {
+        onExit: (err: Error | null) => {
           if (err != null) {
-            console.error("Error during Link flow:", err, metadata);
+            console.error("Error during Link flow:", err);
           }
-          // Handle exit
         },
-        onEvent: (eventName: string, metadata: any) => {
+        onEvent: (eventName: string, metadata: unknown) => {
           console.log("Event:", eventName, metadata);
         },
       });
@@ -112,15 +119,15 @@ export function PlaidConnect() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen" style={{width: "100vw"}}>
-      <div className="p-8 text-center">
-        <h1 className="text-black text-2xl font-bold mb-4">Connect Your Bank Account</h1>
-        <p className="text-black mb-6">
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <h1 className={styles.title}>Connect Your Bank Account</h1>
+        <p className={styles.description}>
           Securely connect your bank account to track your transactions and manage your budget.
         </p>
         <Button
           onClick={handleConnect}
-          className="w-full"
+          className={styles.button}
           disabled={!plaidHandler}
         >
           Connect a Bank Account

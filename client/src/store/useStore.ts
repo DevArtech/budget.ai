@@ -509,14 +509,15 @@ export const useStore = create<StoreState>((set, get) => ({
       if (!token) return;
 
       // Update warning position on the server
-      const response = await fetch("http://localhost:8000/users/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ spend_warning: position }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/users/me/update-spend-warning?spend_warning=${position}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.status === 401) {
         localStorage.removeItem("token");
@@ -936,14 +937,14 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/users/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ spend_warning: position }),
-      });
+      const response = await fetch(`http://localhost:8000/users/me/update-spend-warning?spend_warning=${position}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.status === 401) {
         localStorage.removeItem("token");

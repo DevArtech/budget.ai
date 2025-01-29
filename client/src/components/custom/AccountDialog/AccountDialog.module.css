@@ -1,0 +1,19 @@
+.new-account-button {
+    background-color: #2130cf;
+    color: white;
+    border-radius: 9999px;
+}
+
+.new-account-button:hover {
+    background-color: #212fcfab;
+    color: white;
+    border-radius: 9999px;
+}
+
+.dialog-content {
+    background-color: black;
+}
+
+.balance-input {
+    padding-left: 1.25rem;
+}

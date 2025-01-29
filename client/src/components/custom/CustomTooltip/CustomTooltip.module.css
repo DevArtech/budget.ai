@@ -1,0 +1,11 @@
+.tooltipContainer {
+  background-color: white;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.tooltipText {
+  font-weight: 500;
+}

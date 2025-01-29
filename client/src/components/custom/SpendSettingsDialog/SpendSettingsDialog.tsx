@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/store/useStore";
+import styles from "./SpendSettingsDialog.module.css";
 
 interface SpendSettingsDialogProps {
   onWarningPositionChange: (position: number) => void;
@@ -75,24 +76,19 @@ export function SpendSettingsDialog({
         <Button
           variant="ghost"
           size="icon"
-          style={{ backgroundColor: "transparent" }}
+          className={styles.settingsButton}
         >
           <SettingsIcon />
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: "400px",
-          backgroundColor: "black",
-          top: "45%",
-        }}
+        className={styles.dialogContent}
       >
         <DialogHeader>
           <DialogTitle>Spend Settings</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
             <Label htmlFor="warning-position">Spend Warning Percent (%)</Label>
             <Input
               id="warning-position"
@@ -103,12 +99,12 @@ export function SpendSettingsDialog({
               onChange={(e) => setPosition(Number(e.target.value))}
               required
             />
-            <p className="text-sm text-gray-500">
+            <p className={styles.helpText}>
               The percentage of the budget used that will warn against any
               further spending.
             </p>
           </div>
-          <div className="space-y-2">
+          <div className={styles.inputGroup}>
             <Label htmlFor="savings-percent">Savings Percent (%)</Label>
             <Input
               id="savings-percent"
@@ -119,12 +115,12 @@ export function SpendSettingsDialog({
               onChange={(e) => setSavings(Number(e.target.value))}
               required
             />
-            <p className="text-sm text-gray-500">
+            <p className={styles.helpText}>
               The percentage of money that will be saved each month and
               automatically deducted from your budget.
             </p>
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className={styles.submitButton}>
             Save Settings
           </Button>
         </form>

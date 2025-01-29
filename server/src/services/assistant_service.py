@@ -1,5 +1,6 @@
 import json
 import asyncio
+import requests
 import pandas as pd
 from textwrap import dedent
 from datetime import date, timedelta
@@ -223,7 +224,59 @@ class GoalsTool(BaseTool):
         if goals.empty:
             return "No goals found for this user."
         return goals.to_dict(orient="records")
+    
 
+class WebSearchTool(BaseTool):
+    """Tool for searching the internet and getting websites"""
+    name: str = "search_web"
+    description: str = "Use this tool to search the internet and get websites. Input should be a JSON string with the query. The return result will be a list of websites which meet the query, so keep the query general. After using this tool, you should use the open_website tool to get the contents of the website."
+
+    def _run(self, query: str, *args, **kwargs) -> str:
+        url = "https://google.serper.dev/search"
+
+        query = json.loads(query)["query"]
+
+        payload = json.dumps({"q": query})
+        headers = {
+            "X-API-KEY": settings.serper_api_key,
+            "Content-Type": "application/json",
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+
+        return response.text
+    
+
+class OpenWebsiteTool(BaseTool):
+    """Tool for getting the contents of a website based on the URL"""
+    name: str = "open_website"
+    description: str = "Use this tool to get the contents of a website based on the URL. Input should be a JSON string with the URL."
+
+    def _run(self, url: str, *args, **kwargs) -> str:
+        url = json.loads(url)["url"]
+        return requests.get(url).text
+    
+class InformationTool(BaseTool):
+    """Tool for getting information about the Budget.AI application"""
+    name: str = "get_information"
+    description: str = "Use this tool when a user asks questions about how to do things in the Budget.AI application. This will return instructions and brief information about how Budget.AI works."
+
+    def _run(self, *args, **kwargs) -> str:
+        return """
+        Budget.AI is a financial assistant that helps you manage your finances. 
+        It allows you to track your income and expenses, set financial goals, and get insights on your spending habits.
+        
+        Here are some brief tutorials users may need to know:
+        - Overview Page: An overview on recent spending habits and distributions of spending data. 
+        - Accounts Page: Displays all accounts a user current has linked/created. Accounts can be created manually or linked via the Connect Bank button in the user's settings dropdown in the top right corner of the webpage.
+        - Transactions Page: Displays all transactions a user has made. Can be filtered by name, date, category, amount, etc. Shows three columns for the most recent transactions, past transactions, and future expected transactions.
+        - Goals Page: Displays goals a user has set. Will be factored in when determining budget/weekly spending allowance. A user can create a goal by pressing the "Create New Goal" button in the bottom right.
+        
+        A user can delete a transaction by clicking the trash icon when hovering over a transaction.
+        
+        A user can connect a bank account by clicking the "Connect Bank" button in the dropdown when they click their name in the top right
+        
+        New transactions can be added on the Overview or the Transactions page."""
 
 class AssistantService:
     def __init__(self):
@@ -243,6 +296,9 @@ class AssistantService:
             "get_transactions_per_account": "Retrieving transaction data for {account_name}...",
             "get_spend_details": "Retrieving spend data...",
             "get_goals": "Retrieving goals data...",
+            "search_web": "Searching the internet for {query}...",
+            "open_website": "Opening website {url}...",
+            "get_information": "",
         }
 
         # Map tools to their preprocessing functions
@@ -276,6 +332,9 @@ class AssistantService:
             transactions_per_account_tool = TransactionsPerAccountTool(user_id=user.id)
             spend_tool = SpendTool(user_id=user.id)
             goals_tool = GoalsTool(user_id=user.id)
+            web_search_tool = WebSearchTool()
+            open_website_tool = OpenWebsiteTool()
+            information_tool = InformationTool()
 
             tools = [
                 Tool(
@@ -308,6 +367,21 @@ class AssistantService:
                     description=goals_tool.description,
                     func=goals_tool._run,
                 ),
+                Tool(
+                    name=web_search_tool.name,
+                    description=web_search_tool.description,
+                    func=web_search_tool._run,
+                ),
+                Tool(
+                    name=open_website_tool.name,
+                    description=open_website_tool.description,
+                    func=open_website_tool._run,
+                ),
+                Tool(
+                    name=information_tool.name,
+                    description=information_tool.description,
+                    func=information_tool._run,
+                ),
             ]
 
             memory = ConversationBufferWindowMemory(
@@ -318,13 +392,13 @@ class AssistantService:
             system_message = SystemMessage(
                 content=dedent(
                     f"""
-                                        You are a financial assistant helping the user with their budgeting and finances. You have access to tools to retrieve transaction and account data.
-                                        In general, unless otherwise specified or the use-case determines otherwise, you should check data from within the last month.
-                                        
-                                        ALWAYS make an attempt to use the tools to get the data you need. If you cannot use the tools, then inform the user that you cannot answer the question.
-                                        NEVER respond with an ID of data. If you have an ID, find the name the ID corresponds to.
-                                        ENSURE that tool inputs are formatted as JSON strings with the keys being the names of the parameters for the tools you are using.
-                                        """
+                    You are a financial assistant helping the user with their personal budgeting and finances. You have access to tools to retrieve transaction and account data.
+                    In general, unless otherwise specified or the use-case determines otherwise, you should check data from within the last month.
+                    
+                    ALWAYS make an attempt to use the tools to get the data you need. If you cannot use the tools, then inform the user that you cannot answer the question.
+                    NEVER respond with an ID of data. If you have an ID, find the name the ID corresponds to.
+                    ENSURE that tool inputs are formatted as JSON strings with the keys being the names of the parameters for the tools you are using.
+                    """
                 )
             )
             memory.chat_memory.add_message(system_message)

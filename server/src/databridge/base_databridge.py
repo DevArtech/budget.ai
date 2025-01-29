@@ -65,7 +65,7 @@ class BaseDatabridge:
                     date TEXT NOT NULL,
                     category TEXT NOT NULL,
                     recurrence TEXT,
-                    account_id INTEGER
+                    account_id INTEGER NOT NULL
                 );
             """
             )
@@ -79,7 +79,7 @@ class BaseDatabridge:
                     amount REAL NOT NULL,
                     date TEXT NOT NULL,
                     category TEXT NOT NULL,
-                    account_id INTEGER
+                    account_id INTEGER NOT NULL
                 );
             """
             )

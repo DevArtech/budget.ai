@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import styles from "./AssistantInterface.module.css";
 
 interface Message {
   role: "user" | "assistant";
@@ -87,8 +88,7 @@ export function AssistantInterface() {
       if (!reader) return;
 
       let assistantMessage = "";
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
+      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -109,21 +109,25 @@ export function AssistantInterface() {
         } else {
           assistantMessage += text;
 
-          // Update the message in real-time
+          // Only add/update message if we have actual content
           setMessages((prev) => {
             const newMessages = [...prev];
             const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage.role === "assistant") {
+            if (lastMessage?.role === "assistant") {
+              // Update existing assistant message
               lastMessage.content = assistantMessage;
+              return newMessages;
+            } else {
+              // Add new assistant message
+              return [...newMessages, { role: "assistant", content: assistantMessage }];
             }
-            return newMessages;
           });
+          // Remove loading state once we start getting actual content
+          setIsLoading(false);
         }
       }
     } catch (error) {
       console.error("Error sending message:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -164,33 +168,28 @@ export function AssistantInterface() {
     <Sheet>
       <SheetTrigger asChild>
         <Button
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full p-0 assistant-button"
+          className={`${styles.assistantButton} assistant-button`}
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent
-        className="flex h-full w-full flex-col gap-4 sm:max-w-[400px]"
-        style={{ zIndex: 99999 }}
-      >
+      <SheetContent className={styles.sheetContent}>
         <SheetHeader>
           <SheetTitle>AI Assistant</SheetTitle>
         </SheetHeader>
-        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
-          <div className="flex flex-col gap-4">
+        <ScrollArea ref={scrollAreaRef} className={styles.scrollArea}>
+          <div className={styles.messageContainer}>
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex ${
+                className={`${styles.messageWrapper} ${
                   message.role === "assistant" ? "justify-start" : "justify-end"
                 }`}
               >
                 <div
-                  className={`rounded-lg px-4 py-2 ${
-                    message.role === "assistant"
-                      ? "bg-zinc-100 dark:bg-zinc-800 text-black"
-                      : "bg-blue-500 text-white"
+                  className={`${styles.message} ${
+                    message.role === "assistant" ? styles.assistantMessage : styles.userMessage
                   }`}
                 >
                   {message.content}
@@ -198,33 +197,33 @@ export function AssistantInterface() {
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="animate-pulse rounded-lg bg-zinc-100 px-4 py-2 dark:bg-zinc-800 text-black">
+              <div className={styles.loadingMessage}>
+                <div className={styles.loadingBubble}>
                   Thinking...
                 </div>
               </div>
             )}
           </div>
         </ScrollArea>
-        <div className="flex flex-col gap-2">
+        <div className={styles.actionContainer}>
           {actionMessages.length > 0 && (
-            <div className="action-text text-sm text-muted-foreground bg-muted py-1 rounded">
+            <div className={styles.actionText}>
               {actionMessages.map((action) => (
-                <div key={action.id} className="text-center">
+                <div key={action.id} className={styles.actionMessage}>
                   {action.text}
                 </div>
               ))}
             </div>
           )}
-          <div className="flex gap-2">
+          <div className={styles.inputContainer}>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleClear}
-              className="h-9 w-9 bg-black"
+              className={styles.clearButton}
               title="Clear chat"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className={styles.iconSize} />
             </Button>
             <Input
               value={input}
@@ -232,14 +231,14 @@ export function AssistantInterface() {
               onKeyDown={handleKeyPress}
               placeholder="Type a message..."
               disabled={isLoading}
-              style={{ color: "black" }}
+              className={styles.messageInput}
             />
             <Button
               size="icon"
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
             >
-              <Send className="h-4 w-4" />
+              <Send className={styles.iconSize} />
             </Button>
           </div>
         </div>

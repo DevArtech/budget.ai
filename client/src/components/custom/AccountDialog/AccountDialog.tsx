@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import styles from "../../pages/Accounts.module.css";
+import styles from "./AccountDialog.module.css";
 
 interface AccountDialogProps {
   onAccountCreated: (account: {
@@ -81,7 +81,7 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
           New Account
         </Button>
       </DialogTrigger>
-      <DialogContent style={{ backgroundColor: "black" }}>
+      <DialogContent className={styles["dialog-content"]}>
         <DialogHeader>
           <DialogTitle>Create New Account</DialogTitle>
           <DialogDescription>
@@ -144,7 +144,7 @@ export function AccountDialog({ onAccountCreated }: AccountDialogProps) {
                 step="0.01"
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
-                style={{ paddingLeft: "1.25rem" }}
+                className={styles["balance-input"]}
                 required
               />
             </div>

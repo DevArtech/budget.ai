@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import styles from "./Accounts.module.css";
 import {
@@ -8,28 +8,12 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Tooltip,
-  TooltipProps,
   XAxis,
 } from "recharts";
-import { AccountDialog } from "@/components/custom/AccountDialog";
+import { AccountDialog } from "@/components/custom/AccountDialog/AccountDialog";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/store/useStore";
-
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-2 border border-gray-200 rounded-md shadow-sm">
-        <p className="font-medium">
-          {payload[0].payload.name}: $
-          {payload[0].value?.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-          })}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+import CustomTooltip from "@/components/custom/CustomTooltip/CustomTooltip";
 
 export default function Accounts() {
   const navigate = useNavigate();
@@ -70,7 +54,7 @@ export default function Accounts() {
       style={{ marginTop: "7vh", maxWidth: "100vw", width: "100vw" }}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
-        {accounts.map((account) => (
+        {accounts.length > 0 && accounts.map((account) => (
           <Card
             key={account.id}
             className="hover:shadow-lg transition-shadow"
@@ -177,6 +161,11 @@ export default function Accounts() {
             </div>
           </Card>
         ))}
+        {accounts.length === 0 && (
+          <h2 className="flex items-center justify-center h-full col-span-full text-black text-2xl min-h-[50vh]">
+            You don't seem to have any accounts...
+          </h2>
+        )}
       </div>
       <AccountDialog onAccountCreated={handleAccountCreated} />
     </div>

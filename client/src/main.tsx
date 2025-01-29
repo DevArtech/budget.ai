@@ -1,16 +1,16 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import Overview from "./Overview.tsx";
-import NavBar from "./components/custom/NavBar.tsx";
+import Overview from "./pages/Overview/Overview.tsx";
+import NavBar from "./components/custom/NavBar/NavBar.tsx";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import Accounts from "./pages/Accounts.tsx";
-import Transactions from "./pages/Transactions.tsx";
-import Goals from "./pages/Goals.tsx";
-import Login from "./pages/Login.tsx";
-import { AssistantInterface } from "./components/custom/AssistantInterface.tsx";
+import Accounts from "./pages/Accounts/Accounts.tsx";
+import Transactions from "./pages/Transactions/Transactions.tsx";
+import Goals from "./pages/Goals/Goals.tsx";
+import Login from "./pages/Login/Login.tsx";
+import { AssistantInterface } from "./components/custom/AssistantInterface/AssistantInterface.tsx";
 import { Toaster } from "@/components/ui/toaster";
-import { PlaidConnect } from "./components/custom/PlaidConnect.tsx";
+import { PlaidConnect } from "./components/custom/PlaidConnect/PlaidConnect.tsx";
 
 // Cleanup function to clear assistant history
 const clearAssistantHistory = async () => {

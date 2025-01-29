@@ -12,147 +12,16 @@ import {
   YAxis,
   Line,
 } from "recharts";
-import "./App.css";
+import styles from "./Overview.module.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { Button } from "./components/ui/button";
-import HouseIcon from "@mui/icons-material/House";
-import FastfoodIcon from "@mui/icons-material/Fastfood";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-import WaterDropIcon from "@mui/icons-material/WaterDrop";
-import TheaterComedyIcon from "@mui/icons-material/TheaterComedy";
-import DeleteIcon from "@mui/icons-material/Delete";
-import WorkIcon from "@mui/icons-material/Work";
-import HandymanIcon from "@mui/icons-material/Handyman";
-import StorefrontIcon from "@mui/icons-material/Storefront";
-import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import FlightIcon from "@mui/icons-material/Flight";
-import CategoryIcon from "@mui/icons-material/Category";
-import { TransactionDialog } from "./components/custom/TransactionDialog";
-import { SpendSettingsDialog } from "./components/custom/SpendSettingsDialog";
+import { TransactionDialog } from "@/components/custom/TransactionDialog/TransactionDialog";
+import { SpendSettingsDialog } from "@/components/custom/SpendSettingsDialog/SpendSettingsDialog";
 import { useNavigate } from "react-router-dom";
-import { useStore, categories } from "./store/useStore";
-import { Transaction } from "./types";
-
-interface DayCheckboxProps {
-  value: string;
-  selected?: boolean;
-}
-
-interface AggregatedData {
-  date: string;
-  income: number;
-  expenses: number;
-}
-
-function DayCheckbox({ value, selected }: DayCheckboxProps) {
-  const [isSelected, setIsSelected] = useState(selected || false);
-  return (
-    <Button
-      style={{
-        backgroundColor: isSelected ? "#4ade80" : "#eff0f3",
-        color: isSelected ? "white" : "black",
-      }}
-      onClick={() => setIsSelected(!isSelected)}
-    >
-      {value}
-    </Button>
-  );
-}
-
-function TransactionItem({ transaction }: { transaction: Transaction }) {
-  const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
-  const deleteTransaction = useStore((state) => state.deleteTransaction);
-
-  const handleDelete = async () => {
-    await deleteTransaction(transaction.id, transaction.type);
-    if (!localStorage.getItem("token")) {
-      navigate("/login");
-    }
-  };
-
-  return (
-    <div
-      className="transaction-item"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex flex-row items-center gap-4">
-        {transaction.category == "Housing" && (
-          <HouseIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {(transaction.category == "Food" ||
-          transaction.category == "Food and Drink") && (
-          <FastfoodIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Transportation" && (
-          <DirectionsBusIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Utilities" && (
-          <WaterDropIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {(transaction.category == "Entertainment" ||
-          transaction.category == "Recreation") && (
-          <TheaterComedyIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Work" && (
-          <WorkIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Service" && (
-          <HandymanIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Shops" && (
-          <StorefrontIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Transfer" && (
-          <SyncAltIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Travel" && (
-          <FlightIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        {transaction.category == "Other" && (
-          <CategoryIcon sx={{ color: transaction.backgroundColor }} />
-        )}
-        <div className="flex flex-col">
-          <p
-            className="text-lg font-bold"
-            style={{
-              maxWidth: "21rem",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {transaction.title}
-          </p>
-          <p className="text-sm text-gray-500">{transaction.date}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <p
-          className="text-lg font-bold"
-          style={{
-            color: transaction.type === "income" ? "#22c55e" : "#ef4444",
-          }}
-        >
-          {transaction.type === "income" ? "+" : "-"}$
-          {transaction.amount.toFixed(2)}
-        </p>
-        {isHovered && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="delete-button h-8 w-8 p-0"
-            onClick={handleDelete}
-          >
-            <DeleteIcon color="error" fontSize="large" />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
+import { useStore, categories } from "@/store/useStore";
+import { Transaction, AggregatedData } from "@/types";
+import DayCheckbox from "@/components/custom/DayCheckbox/DayCheckbox";
+import TransactionItem from "../../components/custom/TransactionItem/TransactionItem";
 
 function Overview() {
   const navigate = useNavigate();
@@ -169,6 +38,15 @@ function Overview() {
       fill: "#82ca9d",
     },
   ]);
+  const [selectedDays, setSelectedDays] = useState<{ [key: string]: boolean }>({
+    Sun: true,
+    Mon: true,
+    Tue: true,
+    Wed: true,
+    Thu: true,
+    Fri: true,
+    Sat: true,
+  });
 
   const {
     transactions,
@@ -183,6 +61,7 @@ function Overview() {
     addTransaction,
     updateWarningPosition,
     refreshBudgetData,
+    deleteTransaction,
   } = useStore();
 
   useEffect(() => {
@@ -190,24 +69,77 @@ function Overview() {
     fetchTransactionsAndExpenses();
   }, []);
 
-  useEffect(() => {
-    const safeToSpend = Math.max(0, budgetAllotment - spendOverTime);
-    const spendPercentage = 100 - (spendOverTime / budgetAllotment) * 100;
-    const isNearWarning = warningPosition >= spendPercentage;
+  const handleDaySelect = (day: string, isSelected: boolean) => {
+    const dayMap: { [key: string]: string } = {
+      'M': 'Mon',
+      'T': 'Tue',
+      'W': 'Wed',
+      'R': 'Thu',
+      'F': 'Fri'
+    };
+    
+    let mappedDay;
+    if (day === 'S') {
+      // Get all day buttons
+      const buttons = document.querySelectorAll('.day-buttons button');
+      // If this is the first button (index 0), it's Sunday
+      const buttonIndex = Array.from(buttons).findIndex(button => button === document.activeElement);
+      mappedDay = buttonIndex === 0 ? 'Sun' : 'Sat';
+    } else {
+      mappedDay = dayMap[day];
+    }
+      
+    setSelectedDays(prev => ({ ...prev, [mappedDay]: isSelected }));
+  };
 
-    setSpendData([
-      {
-        name: "Safe-to-Spend",
-        value: safeToSpend,
-        fill: isNearWarning ? "#ffd700" : "#82ca9d",
-      },
-      {
-        name: "Dummy",
-        value: budgetAllotment,
-        fill: isNearWarning ? "#ffd700" : "#82ca9d",
-      },
-    ]);
-  }, [budgetAllotment, spendOverTime, warningPosition]);
+  useEffect(() => {
+    const calculateSpendForSelectedDays = () => {
+      const selectedDayCount = Object.values(selectedDays).filter(Boolean).length || 1;
+      const dailyBudget = budgetAllotment / 7;
+      const selectedDaysBudget = dailyBudget * selectedDayCount;
+      
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      
+      const selectedDaysSpend = transactions
+        .filter(transaction => {
+          if (transaction.type !== 'expense') return false;
+          
+          const transactionDate = new Date(transaction.date);
+          const dayOfWeek = transactionDate.getDay();
+          const dayMap: { [key: number]: string } = {
+            0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'
+          };
+          
+          return (
+            transactionDate >= startOfWeek &&
+            transactionDate <= today &&
+            selectedDays[dayMap[dayOfWeek]]
+          );
+        })
+        .reduce((total, transaction) => total + transaction.amount, 0);
+
+      const safeToSpend = Math.max(0, selectedDaysBudget - selectedDaysSpend);
+      const spendPercentage = 100 - (selectedDaysSpend / selectedDaysBudget) * 100;
+      const isNearWarning = warningPosition >= spendPercentage;
+
+      setSpendData([
+        {
+          name: "Safe-to-Spend",
+          value: safeToSpend,
+          fill: isNearWarning ? "#ffd700" : "#82ca9d",
+        },
+        {
+          name: "Dummy",
+          value: selectedDaysBudget,
+          fill: isNearWarning ? "#ffd700" : "#82ca9d",
+        },
+      ]);
+    };
+
+    calculateSpendForSelectedDays();
+  }, [selectedDays, budgetAllotment, transactions, warningPosition, spendOverTime]);
 
   useEffect(() => {
     const modifiedData = spendData.map((item) => {
@@ -292,20 +224,24 @@ function Overview() {
     };
   };
 
+  const handleDelete = async (transaction: Transaction) => {
+    await deleteTransaction(transaction.id, transaction.type);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+    }
+  };
+
   return (
-    <div className="overview">
+    <div className={styles.overview}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Expenses</CardTitle>
+          <CardTitle className={styles.cardTitle}>Expenses</CardTitle>
         </CardHeader>
         <CardContent>
           {pieChartData.length > 0 ? (
             <div className="relative">
-              <div
-                className="absolute flex flex-col items-center"
-                style={{ top: "-5%" }}
-              >
-                <h2 className="text-xl">
+              <div className={styles.fixedExpensesContainer}>
+                <h2 className={styles.fixedExpensesTitle}>
                   Fixed Expenses per Month: ${fixedPerMonth}
                 </h2>
               </div>
@@ -331,23 +267,23 @@ function Overview() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-lg text-gray-500">No expenses to display</p>
+            <div className={styles.noExpensesContainer}>
+              <p className={styles.noExpensesText}>No expenses to display</p>
             </div>
           )}
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row justify-between">
-          <CardTitle className="text-2xl">Spend</CardTitle>
+        <CardHeader className={styles.cardHeader}>
+          <CardTitle className={styles.cardTitle}>Spend</CardTitle>
           <SpendSettingsDialog
             onWarningPositionChange={handleWarningPositionChange}
             onSavingsPercentChange={handleSavingsPercentChange}
           />
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center">
-            <div className="relative">
+          <div className={styles.spendContainer}>
+            <div className={styles.spendRelativeContainer}>
               <ResponsiveContainer width={400} height={350}>
                 <RadialBarChart
                   innerRadius="80%"
@@ -358,7 +294,7 @@ function Overview() {
                   style={{ position: "relative" }}
                 >
                   <RadialBar
-                    className="radial-bar"
+                    className={styles.radialBar}
                     background
                     dataKey="value"
                     cornerRadius={30}
@@ -366,60 +302,57 @@ function Overview() {
                   />
                 </RadialBarChart>
               </ResponsiveContainer>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full">
-                <div className="relative w-full h-full flex items-center justify-center">
+              <div className={styles.warningIndicatorContainer}>
+                <div className={styles.warningIndicatorInner}>
                   <div
-                    className="warning-label"
+                    className={styles.warningLabel}
                     style={getRadialPosition(warningPosition)}
                   >
-                    <span
-                      className="h-full"
-                      style={{ width: "1px", backgroundColor: "black" }}
-                    />
+                    <span className={styles.warningLine} />
                   </div>
                 </div>
               </div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center items-center justify-center">
+              <div className={styles.spendValueContainer}>
                 <div
-                  className="text-4xl font-bold"
+                  className={styles.spendValue}
                   style={{ color: spendData[0].fill }}
                 >
                   ${Math.floor(spendData[0].value).toString()}
-                  <sup className="text-2xl font-normal">
+                  <sup className={styles.spendValueDecimal}>
                     {(spendData[0].value % 1).toFixed(2).substring(1)}
                   </sup>
                 </div>
-                <div className="text-sm text-gray-500">{spendData[0].name}</div>
-                <div className="text-xs text-gray-400 mt-2">Apr 28 - May 4</div>
+                <div className={styles.spendName}>{spendData[0].name}</div>
+                <div className={styles.spendDate}>Apr 28 - May 4</div>
               </div>
-              <div className="day-buttons flex flex-row gap-2">
-                <DayCheckbox value="S" />
-                <DayCheckbox value="M" />
-                <DayCheckbox value="T" />
-                <DayCheckbox value="W" />
-                <DayCheckbox value="T" selected />
-                <DayCheckbox value="F" selected />
-                <DayCheckbox value="S" selected />
+              <div className={styles.dayButtons}>
+                <DayCheckbox value="S" selected={selectedDays.Sun} onChange={handleDaySelect} />
+                <DayCheckbox value="M" selected={selectedDays.Mon} onChange={handleDaySelect} />
+                <DayCheckbox value="T" selected={selectedDays.Tue} onChange={handleDaySelect} />
+                <DayCheckbox value="W" selected={selectedDays.Wed} onChange={handleDaySelect} />
+                <DayCheckbox value="R" selected={selectedDays.Thu} onChange={handleDaySelect} />
+                <DayCheckbox value="F" selected={selectedDays.Fri} onChange={handleDaySelect} />
+                <DayCheckbox value="S" selected={selectedDays.Sat} onChange={handleDaySelect} />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-      <Card style={{ gridRow: "span 2" }}>
+      <Card className={styles.spanTwoRows}>
         <CardHeader>
-          <CardTitle className="text-2xl">Recent Transactions</CardTitle>
+          <CardTitle className={styles.cardTitle}>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <div
-            style={{
-              maxHeight: "85vh",
-              gap: "1.5rem",
-              padding: transactions.length > 0 ? "1rem" : "0",
-            }}
-            className="flex flex-col items-center overflow-y-auto"
+            className={styles.transactionsContainer}
+            style={{ padding: transactions.length > 0 ? "1rem" : "0" }}
           >
             {transactions.map((transaction, index) => (
-              <TransactionItem key={index} transaction={transaction} />
+              <TransactionItem 
+                key={index} 
+                transaction={transaction} 
+                onDelete={() => handleDelete(transaction)}
+              />
             ))}
           </div>
           <div className="new-transaction">
@@ -427,12 +360,12 @@ function Overview() {
           </div>
         </CardContent>
       </Card>
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card className={styles.spanTwo}>
         <CardHeader>
-          <CardTitle className="text-2xl">Income/Expenses</CardTitle>
+          <CardTitle className={styles.cardTitle}>Income/Expenses</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center">
+          <div className={styles.incomeExpensesContainer}>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart
                 data={transactions

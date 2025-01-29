@@ -137,7 +137,7 @@ const Goals: React.FC = () => {
   return (
     <div className="container py-8 pl-7 pr-8 pt-24 w-[100vw]">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-[97vw]">
-        {goals.map((goal) => (
+        {goals.length > 0 && goals.map((goal) => (
           <div key={goal.id}>
             <Dialog
               open={editGoalDialogOpen}
@@ -342,6 +342,11 @@ const Goals: React.FC = () => {
             </Dialog>
           </div>
         ))}
+        {goals.length === 0 && (
+          <h2 className="flex items-center justify-center h-full col-span-full text-black text-2xl min-h-[50vh]">
+            You don't seem to have any goals...
+          </h2>
+        )}
       </div>
 
       <Dialog open={newGoalDialogOpen} onOpenChange={setNewGoalDialogOpen}>
