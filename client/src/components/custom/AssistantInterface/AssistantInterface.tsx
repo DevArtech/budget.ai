@@ -12,17 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AssistantInterface.module.css";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
-
-interface ActionMessage {
-  id: number;
-  text: string;
-  timestamp: number;
-}
+import { Message, ActionMessage } from "@/types";
 
 export function AssistantInterface() {
   const navigate = useNavigate();

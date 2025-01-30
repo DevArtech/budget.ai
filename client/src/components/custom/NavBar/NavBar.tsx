@@ -60,7 +60,7 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
   useEffect(() => {
     // If no token and not on login page, redirect to login
     if (!isLoggedIn && location.pathname !== "/login") {
-      navigate("/login");
+        navigate("/login");
       return;
     }
 

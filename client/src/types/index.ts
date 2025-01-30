@@ -67,3 +67,14 @@ export interface TransactionDialogProps {
       | "annually";
   }) => void;
 }
+
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ActionMessage {
+  id: number;
+  text: string;
+  timestamp: number;
+}

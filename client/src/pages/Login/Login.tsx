@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { useStore } from "@/store/useStore";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -69,9 +70,11 @@ export default function Login() {
         description: "Welcome back!",
       });
 
+      // Set isLoggedIn to true
+      useStore.setState({ isLoggedIn: true });
+
       // Redirect to dashboard or home
       navigate("/");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -114,9 +117,11 @@ export default function Login() {
         description: "Welcome to Budget.AI!",
       });
 
+      // Set isLoggedIn to true
+      useStore.setState({ isLoggedIn: true });
+
       // Redirect to dashboard or home
       navigate("/");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast({
         variant: "destructive",
