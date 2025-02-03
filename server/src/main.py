@@ -13,7 +13,7 @@ from server.src.routers.spend import router as spend_router
 from server.src.routers.assistant import router as assistant_router
 from server.src.routers.plaid import router as plaid_router
 from server.src.routers.goals import router as goals_router
-
+from server.src.routers.users import router as users_router
 
 app = FastAPI()
 primary = APIRouter(prefix="/api")
@@ -39,7 +39,7 @@ primary.include_router(accounts_router)
 primary.include_router(spend_router)
 primary.include_router(assistant_router)
 primary.include_router(goals_router)
-
+primary.include_router(users_router)
 app.include_router(primary)
 
 @app.get("/{full_path:path}")

@@ -37,34 +37,3 @@ async def signup(user: NewUser):
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
-
-@router.get("/users/me/", response_model=User)
-async def read_users_me(
-    current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
-):
-    return current_user
-
-
-@router.put("/users/me/update-spend-warning/")
-async def update_spend_warning(
-    current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
-    spend_warning: int,
-):
-    db = BaseDatabridge.get_instance()
-    db.execute(
-        f"UPDATE users SET spend_warning = {spend_warning} WHERE id = {current_user.id}"
-    )
-    return {"message": "Spend warning updated successfully"}
-
-
-@router.put("/users/me/update-savings-percent/")
-async def update_savings_percent(
-    current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
-    savings_percent: int,
-):
-    db = BaseDatabridge.get_instance()
-    db.execute(
-        f"UPDATE users SET savings_percent = {savings_percent} WHERE id = {current_user.id}"
-    )
-    return {"message": "Savings percent updated successfully"}
