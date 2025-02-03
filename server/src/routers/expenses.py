@@ -23,7 +23,7 @@ async def get_expenses(
     return result.to_dict(orient="records")
 
 
-@router.get("/fixed-per-month")
+@router.get("/fixed-per-month/")
 async def get_fixed_per_month(
     current_user: Annotated[
         UserInDB, Depends(AuthenticationService.get_current_active_user)
@@ -37,7 +37,7 @@ async def get_fixed_per_month(
     return result.to_dict(orient="records")[0]["total_fixed"]
 
 
-@router.get("/{id}")
+@router.get("/{id}/")
 async def get_expense(
     id: int,
     current_user: Annotated[
@@ -93,7 +93,7 @@ async def create_expense(
     return {"message": "Expense created successfully"}
 
 
-@router.put("/{id}")
+@router.put("/{id}/")
 async def update_expense(
     id: int,
     expense: Expense,
@@ -159,7 +159,7 @@ async def update_expense(
     return {"message": "Expense updated successfully"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}/")
 async def delete_expense(
     id: int,
     current_user: Annotated[

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Transaction, Expense } from "../types";
+import api from "../lib/api";
 
 export interface Account {
   id: number;
@@ -127,6 +128,8 @@ interface StoreState {
   updateSpendWarning: (position: number) => Promise<void>;
   updateSavingsPercent: (percent: number) => Promise<void>;
   fetchUserSettings: () => Promise<void>;
+
+  deleteAccount: (accountId: number) => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -160,31 +163,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
   fetchAccountTransactions: async (accountId: string) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      let url = "http://localhost:8000/transactions";
+      let url = "/transactions";
       if (accountId !== "all") {
-        url = `http://localhost:8000/accounts/${accountId}/transactions`;
+        url = `/accounts/${accountId}/transactions`;
       }
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch transactions");
-      }
-
-      const data = await response.json();
-      const transactionsWithColors = data.map((t: Transaction) => ({
+      const response = await api.get(url);
+      const transactionsWithColors = response.data.map((t: Transaction) => ({
         ...t,
         backgroundColor:
           categories[t.category as keyof typeof categories] || "#8884d8",
@@ -199,59 +184,20 @@ export const useStore = create<StoreState>((set, get) => ({
     if (get().hasLoaded) return;
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       // Fetch user data to get spend warning position
-      const userResponse = await fetch("http://localhost:8000/users/me/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (userResponse.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      const userData = await userResponse.json();
+      const userResponse = await api.get("/users/me/");
+      const userData = await userResponse.data;
       set({ warningPosition: userData.spend_warning });
 
       // Fetch budget allotment
-      const budgetResponse = await fetch(
-        "http://localhost:8000/spend/budget-allotment",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (budgetResponse.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      const budgetData = await budgetResponse.json();
+      const budgetResponse = await api.get("/spend/budget-allotment");
+      const budgetData = await budgetResponse.data;
       set({ budgetAllotment: budgetData });
 
       // Fetch fixed per month expenses
-      const fixedResponse = await fetch(
-        "http://localhost:8000/expenses/fixed-per-month",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (fixedResponse.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      const fixedData = await fixedResponse.json();
-      set({ fixedPerMonth: fixedData || 0 });
+      const fixedResponse = await api.get("/expenses/fixed-per-month");
+      const fixedData = await fixedResponse.data;
+      set({ fixedPerMonth: fixedData });
 
       // Fetch spend over time
       const today = new Date();
@@ -260,15 +206,10 @@ export const useStore = create<StoreState>((set, get) => ({
       const endOfWeek = new Date(today);
       endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
 
-      const spendResponse = await fetch(
-        `http://localhost:8000/spend/spend-over-time?start_date=${
+      const spendResponse = await api.get(
+        `/spend/spend-over-time?start_date=${
           startOfWeek.toISOString().split("T")[0]
-        }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        }&end_date=${endOfWeek.toISOString().split("T")[0]}`
       );
 
       if (spendResponse.status === 401) {
@@ -276,7 +217,7 @@ export const useStore = create<StoreState>((set, get) => ({
         return;
       }
 
-      const spendData = await spendResponse.json();
+      const spendData = await spendResponse.data;
       set({ spendOverTime: spendData, hasLoaded: true });
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -291,21 +232,14 @@ export const useStore = create<StoreState>((set, get) => ({
       if (!token) return;
 
       // Fetch transactions
-      const transactionsResponse = await fetch(
-        "http://localhost:8000/transactions",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const transactionsResponse = await api.get("/transactions");
 
       if (transactionsResponse.status === 401) {
         localStorage.removeItem("token");
         return;
       }
 
-      const transactionsData = await transactionsResponse.json();
+      const transactionsData = await transactionsResponse.data;
       const transactionsWithColors = transactionsData.map((t: Transaction) => ({
         ...t,
         backgroundColor:
@@ -314,18 +248,14 @@ export const useStore = create<StoreState>((set, get) => ({
       set({ transactions: transactionsWithColors });
 
       // Fetch expenses
-      const expensesResponse = await fetch("http://localhost:8000/expenses", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const expensesResponse = await api.get("/expenses");
 
       if (expensesResponse.status === 401) {
         localStorage.removeItem("token");
         return;
       }
 
-      const expensesData = await expensesResponse.json();
+      const expensesData = await expensesResponse.data;
       set({ expenses: expensesData });
     } catch (error) {
       console.error("Error fetching transactions and expenses:", error);
@@ -340,45 +270,28 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/accounts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get("/accounts");
 
       if (response.status === 401) {
         localStorage.removeItem("token");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts");
-      }
-
-      const data = await response.json();
-
       // Fetch transactions for each account
       const accountsWithTransactions = await Promise.all(
-        data.map(async (account: Account) => {
-          const transactionsResponse = await fetch(
-            `http://localhost:8000/accounts/${account.id}/transactions`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (transactionsResponse.status === 401) {
-            localStorage.removeItem("token");
+        response.data.map(async (account: Account) => {
+          try {
+            const transactionsResponse = await api.get(
+              `/accounts/${account.id}/transactions`
+            );
+            return { ...account, transactions: transactionsResponse.data };
+          } catch (error) {
+            console.error(
+              `Error fetching transactions for account ${account.id}:`,
+              error
+            );
             return account;
           }
-
-          if (transactionsResponse.ok) {
-            const transactions = await transactionsResponse.json();
-            return { ...account, transactions };
-          }
-          return account;
         })
       );
 
@@ -397,28 +310,12 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/accounts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(account),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to create account");
-      }
-
+      await api.post("/accounts", account);
       // Refresh accounts after successful creation
       await get().fetchAccounts();
     } catch (error) {
       console.error("Error creating account:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -430,26 +327,10 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(
-        `http://localhost:8000/${transaction.isIncome ? "income" : "expenses"}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(transaction),
-        }
+      await api.post(
+        `/${transaction.isIncome ? "income" : "expenses"}`,
+        transaction
       );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to add transaction");
-      }
 
       // Only refresh necessary data after successful addition
       await get().fetchAccountTransactions(get().selectedAccountId);
@@ -457,6 +338,7 @@ export const useStore = create<StoreState>((set, get) => ({
       await get().refreshBudgetData();
     } catch (error) {
       console.error("Error adding transaction:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -472,24 +354,7 @@ export const useStore = create<StoreState>((set, get) => ({
       if (!token) return;
 
       const endpoint = type === "income" ? "income" : "expenses";
-      const response = await fetch(
-        `http://localhost:8000/${endpoint}/${transactionId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to delete transaction");
-      }
+      await api.delete(`/${endpoint}/${transactionId}`);
 
       // Only refresh necessary data after successful deletion
       await get().fetchAccountTransactions(get().selectedAccountId);
@@ -497,6 +362,7 @@ export const useStore = create<StoreState>((set, get) => ({
       await get().refreshBudgetData();
     } catch (error) {
       console.error("Error deleting transaction:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -508,30 +374,15 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      // Update warning position on the server
-      const response = await fetch(
-        `http://localhost:8000/users/me/update-spend-warning?spend_warning=${position}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to update warning position");
-      }
+      await api.put("/users/me/update-spend-warning", {
+        spend_warning: position,
+      });
 
       // Only update local state after successful server update
       set({ warningPosition: position });
     } catch (error) {
       console.error("Error updating warning position:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -544,21 +395,8 @@ export const useStore = create<StoreState>((set, get) => ({
       if (!token) return;
 
       // Refresh budget allotment
-      const budgetResponse = await fetch(
-        "http://localhost:8000/spend/budget-allotment",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (budgetResponse.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      const budgetData = await budgetResponse.json();
+      const budgetResponse = await api.get("/spend/budget-allotment");
+      const budgetData = await budgetResponse.data;
       set({ budgetAllotment: budgetData });
 
       // Refresh spend over time
@@ -568,15 +406,10 @@ export const useStore = create<StoreState>((set, get) => ({
       const endOfWeek = new Date(today);
       endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
 
-      const spendResponse = await fetch(
-        `http://localhost:8000/spend/spend-over-time?start_date=${
+      const spendResponse = await api.get(
+        `/spend/spend-over-time?start_date=${
           startOfWeek.toISOString().split("T")[0]
-        }&end_date=${endOfWeek.toISOString().split("T")[0]}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        }&end_date=${endOfWeek.toISOString().split("T")[0]}`
       );
 
       if (spendResponse.status === 401) {
@@ -584,26 +417,13 @@ export const useStore = create<StoreState>((set, get) => ({
         return;
       }
 
-      const spendData = await spendResponse.json();
+      const spendData = await spendResponse.data;
       set({ spendOverTime: spendData });
 
       // Refresh fixed per month
-      const fixedResponse = await fetch(
-        "http://localhost:8000/expenses/fixed-per-month",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (fixedResponse.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      const fixedData = await fixedResponse.json();
-      set({ fixedPerMonth: fixedData || 0 });
+      const fixedResponse = await api.get("/expenses/fixed-per-month");
+      const fixedData = await fixedResponse.data;
+      set({ fixedPerMonth: fixedData });
     } catch (error) {
       console.error("Error refreshing budget data:", error);
     } finally {
@@ -618,23 +438,14 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/goals", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get("/goals");
 
       if (response.status === 401) {
         localStorage.removeItem("token");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch goals");
-      }
-
-      const data = await response.json();
-      const goalsWithDates = data.map((goal: BackendGoal) => ({
+      const goalsWithDates = response.data.map((goal: BackendGoal) => ({
         ...goal,
         deadline: new Date(goal.date),
       }));
@@ -656,27 +467,11 @@ export const useStore = create<StoreState>((set, get) => ({
         deadline: undefined,
       };
 
-      const response = await fetch("http://localhost:8000/goals", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formattedGoal),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to create goal");
-      }
-
+      await api.post("/goals", formattedGoal);
       await get().fetchGoals();
     } catch (error) {
       console.error("Error creating goal:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -693,27 +488,11 @@ export const useStore = create<StoreState>((set, get) => ({
         date: goal.deadline.toISOString().split("T")[0],
       };
 
-      const response = await fetch(`http://localhost:8000/goals/${goal.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formattedGoal),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to update goal");
-      }
-
+      await api.put(`/goals/${goal.id}`, formattedGoal);
       await get().fetchGoals();
     } catch (error) {
       console.error("Error updating goal:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -725,25 +504,11 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8000/goals/${goalId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to delete goal");
-      }
-
+      await api.delete(`/goals/${goalId}`);
       await get().fetchGoals();
     } catch (error) {
       console.error("Error deleting goal:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -764,34 +529,17 @@ export const useStore = create<StoreState>((set, get) => ({
         date: goal.deadline.toISOString().split("T")[0],
       };
 
-      const response = await fetch(`http://localhost:8000/goals/${goalId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formattedGoal),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to update goal progress");
-      }
-
+      await api.put(`/goals/${goalId}`, formattedGoal);
       await get().fetchGoals();
     } catch (error) {
       console.error("Error updating goal progress:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
   },
 
   fetchUser: async () => {
-    // Skip if already loaded and not being called as part of a refresh
     if (get().userLoaded && !get().isLoading) return;
 
     try {
@@ -801,24 +549,8 @@ export const useStore = create<StoreState>((set, get) => ({
         return;
       }
 
-      const response = await fetch("http://localhost:8000/users/me/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        set({ isLoggedIn: false, user: null, userLoaded: true });
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
-      }
-
-      const userData = await response.json();
-      set({ user: userData, isLoggedIn: true, userLoaded: true });
+      const response = await api.get("/users/me/");
+      set({ user: response.data, isLoggedIn: true, userLoaded: true });
     } catch (error) {
       console.error("Error fetching user:", error);
       set({ isLoggedIn: false, user: null, userLoaded: true });
@@ -846,23 +578,11 @@ export const useStore = create<StoreState>((set, get) => ({
       const user = get().user;
       if (!token || !user) return;
 
-      const response = await fetch(
-        `http://localhost:8000/plaid/link-token?user_id=${user.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch link token");
-      }
-
-      const data = await response.json();
-      set({ linkToken: data.link_token });
+      const response = await api.get(`/plaid/link-token?user_id=${user.id}`);
+      set({ linkToken: response.data.link_token });
     } catch (error) {
       console.error("Error fetching link token:", error);
+      throw error;
     }
   },
 
@@ -871,59 +591,30 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(
-        "http://localhost:8000/plaid/exchange-public-token",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            public_token: publicToken,
-            name: institutionName,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to exchange public token");
-      }
+      await api.post("/plaid/exchange-public-token", {
+        public_token: publicToken,
+        name: institutionName,
+      });
 
       // Refresh accounts after successful connection
       await get().fetchAccounts();
     } catch (error) {
       console.error("Error exchanging public token:", error);
+      throw error;
     }
   },
 
   fetchUserSettings: async () => {
-    // Skip if already loaded and not being called as part of a refresh
     if (get().settingsLoaded && !get().isLoading) return;
 
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/users/me/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch user settings");
-      }
-
-      const userData = await response.json();
+      const response = await api.get("/users/me/");
       set({
-        warningPosition: userData.spend_warning,
-        savingsPercent: userData.savings_percent,
+        warningPosition: response.data.spend_warning,
+        savingsPercent: response.data.savings_percent,
         settingsLoaded: true,
       });
     } catch (error) {
@@ -937,27 +628,13 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8000/users/me/update-spend-warning?spend_warning=${position}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to update warning position");
-      }
-
+      await api.put("/users/me/update-spend-warning", {
+        spend_warning: position,
+      });
       set({ warningPosition: position });
     } catch (error) {
       console.error("Error updating warning position:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -969,28 +646,30 @@ export const useStore = create<StoreState>((set, get) => ({
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(
-        `http://localhost:8000/users/me/update-savings-percent?savings_percent=${percent}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to update savings percent");
-      }
-
+      await api.put("/users/me/update-savings-percent", {
+        savings_percent: percent,
+      });
       set({ savingsPercent: percent });
     } catch (error) {
       console.error("Error updating savings percent:", error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteAccount: async (accountId: number) => {
+    set({ isLoading: true });
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await api.delete(`/accounts/${accountId}`);
+      // Refresh accounts after successful deletion
+      await get().fetchAccounts();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }

@@ -19,7 +19,7 @@ async def get_accounts(
     return result.to_dict(orient="records")
 
 
-@router.get("/{id}")
+@router.get("/{id}/")
 async def get_account(
     id: int,
     current_user: Annotated[
@@ -33,7 +33,7 @@ async def get_account(
     return result.to_dict(orient="records")
 
 
-@router.get("/{id}/transactions")
+@router.get("/{id}/transactions/")
 async def get_account_transactions(
     id: int,
     current_user: Annotated[
@@ -80,7 +80,7 @@ async def create_account(
     return {"message": "Account created successfully"}
 
 
-@router.put("/{id}")
+@router.put("/{id}/")
 async def update_account(
     id: int,
     account: Account,
@@ -109,7 +109,7 @@ async def update_account(
     return {"message": "Account updated successfully"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}/")
 async def delete_account(
     id: int,
     current_user: Annotated[
@@ -123,7 +123,25 @@ async def delete_account(
     if not existing:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    db.execute(
-        "DELETE FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id)
-    )
-    return {"message": "Account deleted successfully"}
+    # Start a transaction to ensure all deletes happen atomically
+    db.execute("BEGIN TRANSACTION")
+    try:
+        # Delete all related expenses
+        db.execute("DELETE FROM expenses WHERE account_id = ?", (id,))
+        
+        # Delete all related income
+        db.execute("DELETE FROM income WHERE account_id = ?", (id,))
+        
+        # Delete the account itself
+        db.execute(
+            "DELETE FROM accounts WHERE id = ? AND user_id = ?", (id, current_user.id)
+        )
+        
+        # Commit the transaction
+        db.execute("COMMIT")
+    except Exception as e:
+        # If anything fails, rollback all changes
+        db.execute("ROLLBACK")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"message": "Account and all related transactions deleted successfully"}

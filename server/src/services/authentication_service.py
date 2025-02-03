@@ -10,7 +10,7 @@ from server.src.models import UserInDB, TokenData, NewUser
 from server.src.settings import settings
 from server.src.databridge.base_databridge import BaseDatabridge
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token/")
 
 
 class AuthenticationService:

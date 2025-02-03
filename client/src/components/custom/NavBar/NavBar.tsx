@@ -60,7 +60,7 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
   useEffect(() => {
     // If no token and not on login page, redirect to login
     if (!isLoggedIn && location.pathname !== "/login") {
-        navigate("/login");
+      navigate("/login");
       return;
     }
 
@@ -165,14 +165,14 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
                   >
                     <button
                       onClick={handleConnectBank}
-                      className="block w-full px-4 py-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="bg-white block w-full px-4 py-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
                       disabled={!plaidHandler}
                     >
                       Connect Bank
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="block w-full px-4 py-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="bg-white block w-full px-4 py-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
                       Logout
                     </button>

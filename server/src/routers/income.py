@@ -23,7 +23,7 @@ async def get_income(
     return result.to_dict(orient="records")
 
 
-@router.get("/{id}")
+@router.get("/{id}/")
 async def get_income(
     id: int,
     current_user: Annotated[
@@ -72,7 +72,7 @@ async def create_income(
     return {"message": "Income created successfully"}
 
 
-@router.put("/{id}")
+@router.put("/{id}/")
 async def update_income(
     id: int,
     income: Income,
@@ -136,7 +136,7 @@ async def update_income(
     return {"message": "Income updated successfully"}
 
 
-@router.delete("/{id}")
+@router.delete("/{id}/")
 async def delete_income(
     id: int,
     current_user: Annotated[

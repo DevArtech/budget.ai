@@ -20,13 +20,13 @@ def create_goal(goal: Goal, current_user: Annotated[User, Depends(auth_service.g
     db.execute("INSERT INTO goals (user_id, name, description, amount, date, completed, progress) VALUES (?, ?, ?, ?, ?, ?, ?)", (current_user.id, goal.name, goal.description, goal.amount, goal.date, int(goal.completed), goal.progress))
     return {"message": "Goal created successfully"}
 
-@router.put("/{goal_id}")
+@router.put("/{goal_id}/")
 def update_goal(goal_id: int, goal: Goal, current_user: Annotated[User, Depends(auth_service.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    db.execute("UPDATE goals SET name = ?, description = ?, amount = ?, date = ?, completed = ?, progress = ? WHERE id = ?", (goal.name, goal.description, goal.amount, goal.date, int(goal.completed), goal.progress, goal_id))
+    db.execute("UPDATE goals SET name = ?, description = ?, amount = ?, date = ?, completed = ?, progress = ? WHERE id = ? and user_id = ?", (goal.name, goal.description, goal.amount, goal.date, int(goal.completed), goal.progress, goal_id, current_user.id))
     return {"message": "Goal updated successfully"}
 
-@router.delete("/{goal_id}")
+@router.delete("/{goal_id}/")
 def delete_goal(goal_id: int, current_user: Annotated[User, Depends(auth_service.get_current_active_user)]):
     db = BaseDatabridge.get_instance()
-    db.execute("DELETE FROM goals WHERE id = ?", (goal_id,))
+    db.execute("DELETE FROM goals WHERE id = ? and user_id = ?", (goal_id, current_user.id))

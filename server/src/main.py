@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 
 from server.src.routers.auth import router as auth_router
 from server.src.routers.expenses import router as expenses_router
@@ -13,6 +16,7 @@ from server.src.routers.goals import router as goals_router
 
 
 app = FastAPI()
+primary = APIRouter(prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,12 +26,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(plaid_router)
-app.include_router(transactions_router)
-app.include_router(expenses_router)
-app.include_router(income_router)
-app.include_router(accounts_router)
-app.include_router(spend_router)
-app.include_router(assistant_router)
-app.include_router(goals_router)
+# Mount the static files
+app.mount("/assets", StaticFiles(directory="./client/dist/assets"), name="assets")
+
+# Add API prefix to all routers
+primary.include_router(auth_router)
+primary.include_router(plaid_router)
+primary.include_router(transactions_router)
+primary.include_router(expenses_router)
+primary.include_router(income_router)
+primary.include_router(accounts_router)
+primary.include_router(spend_router)
+primary.include_router(assistant_router)
+primary.include_router(goals_router)
+
+app.include_router(primary)
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # Serve the index.html for any path that doesn't match an API route
+    if not full_path.startswith("api/"):
+        return FileResponse("./client/dist/index.html")

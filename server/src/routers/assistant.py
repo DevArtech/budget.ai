@@ -10,7 +10,7 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 assistant_service = AssistantService()
 
 
-@router.post("/chat")
+@router.post("/chat/")
 async def chat(
     message: str,
     current_user: Annotated[
@@ -25,7 +25,7 @@ async def chat(
     )
 
 
-@router.get("/history")
+@router.get("/history/")
 async def get_history(
     current_user: Annotated[
         UserInDB, Depends(AuthenticationService.get_current_active_user)
@@ -37,7 +37,7 @@ async def get_history(
     return assistant_service.get_chat_history(current_user)
 
 
-@router.post("/clear")
+@router.post("/clear/")
 async def clear_history(
     current_user: Annotated[
         UserInDB, Depends(AuthenticationService.get_current_active_user)

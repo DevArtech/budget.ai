@@ -17,14 +17,14 @@ from server.src.models import (
 router = APIRouter(prefix="/plaid", tags=["plaid"])
 
 
-@router.get("/link-token")
+@router.get("/link-token/")
 async def get_link_token(user_id: str):
     databridge = PlaidDatabridge()
     link_token = databridge.create_link_token(user_id)
     return {"link_token": link_token}
 
 
-@router.post("/exchange-public-token")
+@router.post("/exchange-public-token/")
 async def exchange_public_token(
     token: PublicTokenExchangeRequest,
     current_user: Annotated[
@@ -103,7 +103,7 @@ async def exchange_public_token(
     return {"message": "Public token has been exchanged and transactions stored"}
 
 
-@router.post("/transactions")
+@router.post("/transactions/")
 async def get_transactions(
     transaction_request: PlaidTransactionRequest,
     current_user: Annotated[
@@ -117,7 +117,7 @@ async def get_transactions(
     }
 
 
-@router.get("/balance")
+@router.get("/balance/")
 async def get_balance(
     account_id: int,
     current_user: Annotated[
@@ -126,7 +126,7 @@ async def get_balance(
 ):
     return {"account": PlaidService().get_balance(account_id, current_user)}
 
-@router.post("/sync-transactions")
+@router.post("/sync-transactions/")
 async def sync_transactions(
     current_user: Annotated[
         UserInDB, Depends(AuthenticationService.get_current_active_user)

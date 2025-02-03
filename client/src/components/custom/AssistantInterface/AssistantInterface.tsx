@@ -53,9 +53,7 @@ export function AssistantInterface() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/assistant/chat?message=${encodeURIComponent(
-          userMessage
-        )}`,
+        `/api/assistant/chat/?message=${encodeURIComponent(userMessage)}`,
         {
           method: "POST",
           headers: {
@@ -78,7 +76,7 @@ export function AssistantInterface() {
       if (!reader) return;
 
       let assistantMessage = "";
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -109,7 +107,10 @@ export function AssistantInterface() {
               return newMessages;
             } else {
               // Add new assistant message
-              return [...newMessages, { role: "assistant", content: assistantMessage }];
+              return [
+                ...newMessages,
+                { role: "assistant", content: assistantMessage },
+              ];
             }
           });
           // Remove loading state once we start getting actual content
@@ -131,7 +132,7 @@ export function AssistantInterface() {
   const handleClear = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/assistant/clear", {
+      const response = await fetch("/api/assistant/clear/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -179,7 +180,9 @@ export function AssistantInterface() {
               >
                 <div
                   className={`${styles.message} ${
-                    message.role === "assistant" ? styles.assistantMessage : styles.userMessage
+                    message.role === "assistant"
+                      ? styles.assistantMessage
+                      : styles.userMessage
                   }`}
                 >
                   {message.content}
@@ -188,9 +191,7 @@ export function AssistantInterface() {
             ))}
             {isLoading && (
               <div className={styles.loadingMessage}>
-                <div className={styles.loadingBubble}>
-                  Thinking...
-                </div>
+                <div className={styles.loadingBubble}>Thinking...</div>
               </div>
             )}
           </div>

@@ -11,9 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/store/useStore";
+import api from "@/lib/api";
+import { AxiosError } from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -43,26 +44,19 @@ export default function Login() {
       formData.append("username", loginData.username);
       formData.append("password", loginData.password);
 
-      const response = await axios.post(
-        "http://localhost:8000/token",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      // Use axios directly for token endpoint since it's not part of the API routes
+      const response = await api.post("/token", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       // Store the token
       localStorage.setItem("token", response.data.access_token);
 
       // Sync transactions
       setIsSyncing(true);
-      await axios.post("http://localhost:8000/plaid/sync-transactions", null, {
-        headers: {
-          Authorization: `Bearer ${response.data.access_token}`,
-        },
-      });
+      await api.post("/plaid/sync-transactions");
       setIsSyncing(false);
 
       toast({
@@ -75,12 +69,13 @@ export default function Login() {
 
       // Redirect to dashboard or home
       navigate("/");
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<{ detail: string }>;
       toast({
         variant: "destructive",
         title: "Login failed",
         description:
-          error.response?.data?.detail || "An error occurred during login",
+          axiosError.response?.data?.detail || "An error occurred during login",
       });
     } finally {
       setIsLoading(false);
@@ -102,7 +97,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8000/signup", {
+      const response = await api.post("/signup", {
         full_name: signupData.fullName,
         username: signupData.username,
         email: signupData.email,
@@ -122,12 +117,14 @@ export default function Login() {
 
       // Redirect to dashboard or home
       navigate("/");
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<{ detail: string }>;
       toast({
         variant: "destructive",
         title: "Signup failed",
         description:
-          error.response?.data?.detail || "An error occurred during signup",
+          axiosError.response?.data?.detail ||
+          "An error occurred during signup",
       });
     } finally {
       setIsLoading(false);
@@ -179,7 +176,11 @@ export default function Login() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (isSyncing ? "Syncing transactions..." : "Logging in...") : "Login"}
+                  {isLoading
+                    ? isSyncing
+                      ? "Syncing transactions..."
+                      : "Logging in..."
+                    : "Login"}
                 </Button>
               </form>
             </TabsContent>

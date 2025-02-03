@@ -9,7 +9,7 @@ from server.src.services.authentication_service import AuthenticationService
 router = APIRouter(prefix="/spend", tags=["spend"])
 
 
-@router.get("/budget-allotment")
+@router.get("/budget-allotment/")
 async def get_budget_allotment(
     current_user: Annotated[
         UserInDB, Depends(AuthenticationService.get_current_active_user)
@@ -19,7 +19,7 @@ async def get_budget_allotment(
     return spend_service.get_budget_allotment(current_user)
 
 
-@router.get("/spend-over-time")
+@router.get("/spend-over-time/")
 async def get_spend_over_time(
     start_date: date,
     end_date: date,

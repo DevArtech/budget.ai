@@ -11,7 +11,7 @@ router = APIRouter()
 auth_service = AuthenticationService()
 
 
-@router.post("/token")
+@router.post("/token/")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
@@ -29,7 +29,7 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@router.post("/signup")
+@router.post("/signup/")
 async def signup(user: NewUser):
     user = auth_service.create_user(user)
     access_token_expires = timedelta(minutes=auth_service.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -46,7 +46,7 @@ async def read_users_me(
     return current_user
 
 
-@router.put("/users/me/update-spend-warning")
+@router.put("/users/me/update-spend-warning/")
 async def update_spend_warning(
     current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
     spend_warning: int,
@@ -58,7 +58,7 @@ async def update_spend_warning(
     return {"message": "Spend warning updated successfully"}
 
 
-@router.put("/users/me/update-savings-percent")
+@router.put("/users/me/update-savings-percent/")
 async def update_savings_percent(
     current_user: Annotated[User, Depends(auth_service.get_current_active_user)],
     savings_percent: int,
