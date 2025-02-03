@@ -17,12 +17,11 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import styles from "./TransactionDialog.module.css";
-import { TransactionDialogProps, Account } from "@/types";
+import { TransactionDialogProps } from "@/types";
+import { useStore } from "@/store/useStore";
 
 export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -30,41 +29,16 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
   const [category, setCategory] = useState("");
   const [isIncome, setIsIncome] = useState(false);
   const [recurrence, setRecurrence] = useState<string>();
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>();
+
+  const { accounts, fetchAccounts } = useStore();
 
   useEffect(() => {
     // Fetch accounts when dialog opens
     if (open) {
-      const fetchAccounts = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const response = await fetch("http://localhost:8000/accounts", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (response.status === 401) {
-            localStorage.removeItem("token");
-            navigate("/login");
-            return;
-          }
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch accounts");
-          }
-
-          const data = await response.json();
-          setAccounts(data);
-        } catch (error) {
-          console.error("Error fetching accounts:", error);
-        }
-      };
-
       fetchAccounts();
     }
-  }, [open, navigate]);
+  }, [open, fetchAccounts]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,9 +78,7 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={styles.newTransactionButton}>
-          New Transaction
-        </Button>
+        <Button className={styles.newTransactionButton}>New Transaction</Button>
       </DialogTrigger>
       <DialogContent className={styles.transactionDialog}>
         <DialogHeader>

@@ -16,7 +16,7 @@ import { PlaidConnect } from "./components/custom/PlaidConnect/PlaidConnect.tsx"
 const clearAssistantHistory = async () => {
   try {
     const token = localStorage.getItem("token");
-    await fetch("/assistant/clear", {
+    await fetch("/api/assistant/clear/", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
