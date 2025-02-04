@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,18 @@ import CustomTooltip from "@/components/custom/CustomTooltip/CustomTooltip";
 
 export default function Accounts() {
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { accounts, isLoading, fetchAccounts, addAccount, deleteAccount } =
     useStore();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -72,7 +82,9 @@ export default function Accounts() {
               >
                 <DeleteIcon color="error" />
               </Button>
-              <div className="flex flex-row gap-4">
+              <div
+                className={`flex ${isMobile ? "flex-col" : "flex-row"} gap-4`}
+              >
                 <div className="flex flex-col flex-1">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <h2 className="text-2xl font-bold">{account.name}</h2>
@@ -93,7 +105,11 @@ export default function Accounts() {
                     </div>
                   </CardContent>
                 </div>
-                <div className="w-[300px] h-[175px]">
+                <div
+                  className={`${isMobile ? "w-full" : "w-[300px]"} ${
+                    isMobile ? "h-[200px]" : "h-[175px]"
+                  }`}
+                >
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={
