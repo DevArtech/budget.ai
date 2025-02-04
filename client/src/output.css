@@ -738,10 +738,6 @@ video {
   z-index: 1;
 }
 
-.z-\[9999\] {
-  z-index: 9999;
-}
-
 .col-span-full {
   grid-column: 1 / -1;
 }
@@ -1249,6 +1245,10 @@ video {
 
 .border-t {
   border-top-width: 1px;
+}
+
+.border-none {
+  border-style: none;
 }
 
 .border-red-500 {
@@ -2556,6 +2556,10 @@ video {
 
   .sm\:top-auto {
     top: auto;
+  }
+
+  .sm\:w-\[400px\] {
+    width: 400px;
   }
 
   .sm\:max-w-sm {

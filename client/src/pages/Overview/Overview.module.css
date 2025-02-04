@@ -8,6 +8,20 @@
     gap: 2rem;
   }
   
+  @media (max-width: 768px) {
+    .overview {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      padding: 1rem;
+      width: 100%;
+    }
+
+    .overview > * {
+      grid-column: 1 !important;
+      width: 100% !important;
+    }
+  }
+  
   sup {
     top: -0.35em;
   }

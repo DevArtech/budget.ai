@@ -197,6 +197,7 @@ export const useStore = create<StoreState>((set, get) => ({
       // Fetch fixed per month expenses
       const fixedResponse = await api.get("/expenses/fixed-per-month");
       const fixedData = await fixedResponse.data;
+      console.log(fixedData);
       set({ fixedPerMonth: fixedData });
 
       // Fetch spend over time

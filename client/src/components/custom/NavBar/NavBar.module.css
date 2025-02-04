@@ -11,6 +11,12 @@
   z-index: 9999;
 }
 
+@media (max-width: 768px) {
+  .nav {
+    padding: 0.25rem 1rem;
+  }
+}
+
 .nav h2 {
   margin: 0;
   padding: 0;
@@ -18,6 +24,12 @@
   font-family: "Jersey 15", Roboto, Inter, system-ui, Avenir, Helvetica, Arial;
   color: rgba(255, 255, 255, 0.8);
   transition: color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .nav h2 {
+    font-size: 2rem;
+  }
 }
 
 .nav h2:hover {
@@ -65,4 +77,89 @@
 
 .user:hover {
   border: 1px solid transparent;
+}
+
+/* Mobile menu styles */
+@media (max-width: 768px) {
+  .desktopMenu {
+    display: none;
+  }
+
+  .mobileMenuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s ease;
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .mobileMenuButton:hover {
+    color: rgba(255, 255, 255, 1);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (min-width: 769px) {
+  .mobileMenuButton {
+    display: none;
+  }
+}
+
+.mobileNavContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #2130cf 0%, #1a2499 100%);
+  height: 100%;
+  color: white;
+}
+
+.mobileNavItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.mobileNavItem:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobileNavItem:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 1);
+}
+
+.mobileNavDivider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0.5rem 0;
+}
+
+.dark .mobileNavItem {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .mobileNavItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .mobileNavDivider {
+  background-color: rgba(255, 255, 255, 0.2);
 }

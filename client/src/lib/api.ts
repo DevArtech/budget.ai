@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const isDevPort = window.location.port === "5173";
+const baseURL = isDevPort ? "http://localhost:8000/api" : "/api";
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },

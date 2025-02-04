@@ -8,11 +8,15 @@ import {
   } from "recharts";
 import styles from "./CardStyles.module.css";
 import { useStore, categories } from "@/store/useStore";
+import { useEffect } from "react";
+import { useState } from "react";
 
 function ExpensesCard() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const {
         expenses,
         fixedPerMonth,
+
       } = useStore();
 
     const expensesByCategory = expenses.reduce(
@@ -30,6 +34,10 @@ function ExpensesCard() {
           fill: categories[category as keyof typeof categories] || "#8884d8",
         })
       );
+      
+      useEffect(() => {
+        setIsMobile(window.innerWidth <= 768);
+      }, [window.innerWidth]);
 
     return (
         <Card>
@@ -41,7 +49,7 @@ function ExpensesCard() {
             <div className="relative">
               <div className={styles.fixedExpensesContainer}>
                 <h2 className={styles.fixedExpensesTitle}>
-                  Fixed Expenses per Month: ${fixedPerMonth}
+                  Fixed Expenses per Month: ${fixedPerMonth ? fixedPerMonth : "0.00"}
                 </h2>
               </div>
 
@@ -51,12 +59,14 @@ function ExpensesCard() {
                     data={pieChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
+                    innerRadius={isMobile ? 35 : 60}
+                    outerRadius={isMobile ? 70 : 120}
                     dataKey="value"
                     label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
+                      `${isMobile ? "" : name} ${(percent * 100).toFixed(0)}%`
                     }
+
+
                   />
                   <Tooltip
                     formatter={(value) => `$${Number(value).toFixed(2)}`}

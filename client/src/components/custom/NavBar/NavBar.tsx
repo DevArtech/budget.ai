@@ -12,6 +12,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/store/useStore";
 
@@ -115,12 +122,73 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
     }
   };
 
+  const renderNavItems = (isMobile = false) => {
+    if (!isLoggedIn) {
+      return (
+        <SheetClose asChild>
+          <Link to="/login" className={isMobile ? styles.mobileNavItem : undefined}>
+            {isMobile ? "Login" : <NavigationMenuLink>Login</NavigationMenuLink>}
+          </Link>
+        </SheetClose>
+      );
+    }
+
+    return (
+      <>
+        <SheetClose asChild>
+          <Link to="/" className={isMobile ? styles.mobileNavItem : undefined}>
+            {isMobile ? "Overview" : <NavigationMenuLink>Overview</NavigationMenuLink>}
+          </Link>
+        </SheetClose>
+        <SheetClose asChild>
+          <Link to="/accounts" className={isMobile ? styles.mobileNavItem : undefined}>
+            {isMobile ? "Accounts" : <NavigationMenuLink>Accounts</NavigationMenuLink>}
+          </Link>
+        </SheetClose>
+        <SheetClose asChild>
+          <Link to="/transactions" className={isMobile ? styles.mobileNavItem : undefined}>
+            {isMobile ? "Transactions" : <NavigationMenuLink>Transactions</NavigationMenuLink>}
+          </Link>
+        </SheetClose>
+        <SheetClose asChild>
+          <Link to="/goals" className={isMobile ? styles.mobileNavItem : undefined}>
+            {isMobile ? "Goals" : <NavigationMenuLink>Goals</NavigationMenuLink>}
+          </Link>
+        </SheetClose>
+        {isMobile && (
+          <>
+            <div className={styles.mobileNavDivider} />
+            <SheetClose asChild>
+              <button
+                onClick={handleConnectBank}
+                className={styles.mobileNavItem}
+                disabled={!plaidHandler}
+              >
+                Connect Bank
+              </button>
+            </SheetClose>
+            <SheetClose asChild>
+              <button
+                onClick={handleLogout}
+                className={styles.mobileNavItem}
+              >
+                Logout
+              </button>
+            </SheetClose>
+          </>
+        )}
+      </>
+    );
+  };
+
   return (
     <nav className={styles.nav} style={{ backgroundColor }}>
       <Link to="/">
         <h2>{title}</h2>
       </Link>
-      <NavigationMenu className={styles.navMenu}>
+
+      {/* Desktop Menu */}
+      <NavigationMenu className={`${styles.navMenu} ${styles.desktopMenu}`}>
         <NavigationMenuList>
           {isLoggedIn && (
             <>
@@ -187,6 +255,23 @@ const NavBar: FC<NavBarProps> = ({ title, backgroundColor }) => {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
+
+      {/* Mobile Menu */}
+      <Sheet>
+        <SheetTrigger className={styles.mobileMenuButton}>
+          <Menu size={24} />
+        </SheetTrigger>
+        <SheetContent side="left" className="border-none bg-transparent p-0 w-[300px] sm:w-[400px]">
+          <div className={styles.mobileNavContent}>
+            {isLoggedIn && (
+              <div className={styles.mobileNavItem}>
+                {user?.full_name || user?.username}
+              </div>
+            )}
+            {renderNavItems(true)}
+          </div>
+        </SheetContent>
+      </Sheet>
     </nav>
   );
 };
