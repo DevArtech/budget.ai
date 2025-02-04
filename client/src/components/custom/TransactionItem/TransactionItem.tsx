@@ -11,7 +11,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
 import FlightIcon from "@mui/icons-material/Flight";
 import CategoryIcon from "@mui/icons-material/Category";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import styles from "./TransactionItem.module.css";
 
@@ -25,19 +25,37 @@ function TransactionItem({
   style?: React.CSSProperties;
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isSelected, setIsSelected] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleClick = () => {
+    if (isMobile) {
+      setIsSelected(!isSelected);
+    }
+  };
 
   return (
     <div
       style={style}
       className={styles.container}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
+      onClick={handleClick}
     >
       <div className={styles.flexRow}>
         {transaction.category === "Housing" && (
           <HouseIcon sx={{ color: transaction.backgroundColor }} />
         )}
-        {(transaction.category === "Food" || 
+        {(transaction.category === "Food" ||
           transaction.category === "Food and Drink") && (
           <FastfoodIcon sx={{ color: transaction.backgroundColor }} />
         )}
@@ -47,7 +65,7 @@ function TransactionItem({
         {transaction.category === "Utilities" && (
           <WaterDropIcon sx={{ color: transaction.backgroundColor }} />
         )}
-        {(transaction.category === "Entertainment" || 
+        {(transaction.category === "Entertainment" ||
           transaction.category === "Recreation") && (
           <TheaterComedyIcon sx={{ color: transaction.backgroundColor }} />
         )}
@@ -70,9 +88,7 @@ function TransactionItem({
           <CategoryIcon sx={{ color: transaction.backgroundColor }} />
         )}
         <div className={styles.flexCol}>
-          <p className={styles.titleText}>
-            {transaction.title}
-          </p>
+          <p className={styles.titleText}>{transaction.title}</p>
           <p className={styles.dateText}>{transaction.date}</p>
         </div>
       </div>
@@ -83,14 +99,21 @@ function TransactionItem({
             color: transaction.type === "income" ? "#22c55e" : "#ef4444",
           }}
         >
-          {transaction.type === "income" ? "+" : "-"}${transaction.amount.toFixed(2)}
+          {transaction.type === "income" ? "+" : "-"}$
+          {transaction.amount.toFixed(2)}
         </p>
-        {isHovered && (
+        {((!isMobile && isHovered) || (isMobile && isSelected)) && (
           <Button
             variant="ghost"
             size="icon"
             className={styles.deleteButton}
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+              if (isMobile) {
+                setIsSelected(false);
+              }
+            }}
           >
             <DeleteIcon color="error" fontSize="large" />
           </Button>

@@ -18,9 +18,9 @@ function Overview() {
     <>
       <div className={styles.overview}>
         <ExpensesCard />
-        {/* <SpendCard />
+        <SpendCard />
         <TransactionsCard />
-        <TimelineCard /> */}
+        <TimelineCard />
       </div>
     </>
   );

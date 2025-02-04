@@ -1,42 +1,43 @@
 .overview {
-    margin-top: 7vh;
-    padding: 2rem;
-    width: 100vw;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 450px auto;
-    gap: 2rem;
-  }
-  
-  @media (max-width: 768px) {
-    .overview {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto;
-      padding: 1rem;
-      width: 100%;
-    }
+  margin-top: 7vh;
+  padding: 2rem;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 450px auto;
+  gap: 2rem;
+}
 
-    .overview > * {
-      grid-column: 1 !important;
-      width: 100% !important;
-    }
+@media (max-width: 768px) {
+  .overview {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    padding: 1rem;
+    width: 100%;
+    gap: 1rem;
   }
-  
-  sup {
-    top: -0.35em;
+
+  .overview > * {
+    grid-column: 1 !important;
+    width: 100% !important;
   }
-  
-  .categoryBadge {
-    position: absolute;
-    top: -20%;
-    left: -1%;
-    border-radius: 0.5rem;
-  }
-  
-  [role="dialog"] > button {
-    background-color: #111111;
-  }
-  
-  .actionText {
-    color: #212fcf;
-  }
+}
+
+sup {
+  top: -0.35em;
+}
+
+.categoryBadge {
+  position: absolute;
+  top: -20%;
+  left: -1%;
+  border-radius: 0.5rem;
+}
+
+[role="dialog"] > button {
+  background-color: #111111;
+}
+
+.actionText {
+  color: #212fcf;
+}
