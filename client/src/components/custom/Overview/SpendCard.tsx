@@ -43,9 +43,7 @@ function SpendCard() {
     refreshBudgetData,
   } = useStore();
 
-  const [containerWidth, setContainerWidth] = useState(
-    window.innerWidth * 0.79
-  );
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth * 0.8);
 
   useEffect(() => {
     const modifiedData = spendData.map((item) => {
