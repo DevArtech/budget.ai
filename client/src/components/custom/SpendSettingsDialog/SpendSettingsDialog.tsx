@@ -73,16 +73,12 @@ export function SpendSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={styles.settingsButton}
-        >
+        <Button variant="ghost" size="icon" className={styles.settingsButton}>
           <SettingsIcon />
         </Button>
       </DialogTrigger>
       <DialogContent
-        className={styles.dialogContent}
+        className={`${styles.dialogContent} md:!scale-100 !scale-[0.85] !origin-center md:translate-y-0 !-translate-y-[200%]`}
       >
         <DialogHeader>
           <DialogTitle>Spend Settings</DialogTitle>

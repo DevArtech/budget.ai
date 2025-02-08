@@ -80,7 +80,9 @@ export function TransactionDialog({ onSubmit }: TransactionDialogProps) {
       <DialogTrigger asChild>
         <Button className={styles.newTransactionButton}>New Transaction</Button>
       </DialogTrigger>
-      <DialogContent className={styles.transactionDialog}>
+      <DialogContent
+        className={`${styles.transactionDialog} md:scale-100 scale-[0.7] origin-center`}
+      >
         <DialogHeader>
           <DialogTitle>Add New Transaction</DialogTitle>
         </DialogHeader>

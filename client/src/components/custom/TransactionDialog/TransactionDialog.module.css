@@ -6,13 +6,13 @@
 }
 
 .incomeCheckbox {
-    width: 20px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 0.1rem;
-  }
+  width: 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.1rem;
+}
 
 .transactionDialog {
   width: 600px;

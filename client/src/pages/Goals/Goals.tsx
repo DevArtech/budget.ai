@@ -135,11 +135,11 @@ const Goals: React.FC = () => {
   }
 
   return (
-    <div className="container py-8 pl-7 pr-8 pt-24 w-[100vw]">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-[97vw]">
+    <div className="container py-8 px-2 md:pl-7 md:pr-8 pt-20 md:pt-24 w-full md:w-[100vw]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full md:w-[97vw]">
         {goals.length > 0 &&
           goals.map((goal) => (
-            <div key={goal.id}>
+            <div key={goal.id} className="w-full">
               <Dialog
                 open={editGoalDialogOpen}
                 onOpenChange={(open) => {
@@ -153,7 +153,7 @@ const Goals: React.FC = () => {
               >
                 <DialogTrigger asChild>
                   <Card
-                    className={`${styles.goalCard} cursor-pointer hover:opacity-90 relative group`}
+                    className={`${styles.goalCard} cursor-pointer hover:opacity-90 relative group w-[95vw] md:w-full`}
                   >
                     <Button
                       variant="ghost"
@@ -177,23 +177,25 @@ const Goals: React.FC = () => {
                       <p className="text-muted-foreground mb-4">
                         {goal.description}
                       </p>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Progress
-                          value={calculateProgress(
-                            goal.progress || 0,
-                            goal.amount
-                          )}
-                          className="flex-1"
-                          style={
-                            {
-                              backgroundColor: "#f0f0f0",
-                            } as React.CSSProperties
-                          }
-                        />
+                      <div className="w-full flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                        <div className="w-full">
+                          <Progress
+                            value={calculateProgress(
+                              goal.progress || 0,
+                              goal.amount
+                            )}
+                            className="w-full order-1"
+                            style={
+                              {
+                                backgroundColor: "#f0f0f0",
+                              } as React.CSSProperties
+                            }
+                          />
+                        </div>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="whitespace-nowrap"
+                          className="w-full md:w-auto whitespace-nowrap h-10 md:h-8 order-2"
                           onClick={(e) => {
                             e.stopPropagation();
                             setProgressUpdateGoal(goal);
@@ -216,9 +218,13 @@ const Goals: React.FC = () => {
                     </CardContent>
                   </Card>
                 </DialogTrigger>
-                <DialogContent style={{ background: "black" }}>
+                <DialogContent
+                  style={{ background: "black" }}
+                  className="md:scale-100 scale-[0.85] origin-center"
+                >
                   <DialogHeader>
                     <DialogTitle>Edit Goal</DialogTitle>
+
                     <DialogDescription>
                       Update your savings goal details.
                     </DialogDescription>
@@ -284,8 +290,28 @@ const Goals: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button onClick={handleUpdateGoal}>Update Goal</Button>
+                  <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      onClick={handleUpdateGoal}
+                      className="w-full sm:w-auto order-1"
+                    >
+                      Update Goal
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!selectedGoal?.id) return;
+                        await deleteGoal(selectedGoal.id);
+                        if (!localStorage.getItem("token")) {
+                          navigate("/login");
+                        }
+                        setEditGoalDialogOpen(false);
+                      }}
+                      className="w-full sm:w-auto order-2"
+                    >
+                      Delete Goal
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -298,9 +324,13 @@ const Goals: React.FC = () => {
                   }
                 }}
               >
-                <DialogContent style={{ background: "black" }}>
+                <DialogContent
+                  style={{ background: "black" }}
+                  className="md:scale-100 scale-[0.85] origin-center z-[9999]"
+                >
                   <DialogHeader>
                     <DialogTitle>Update Saved Amount</DialogTitle>
+
                     <DialogDescription>
                       Update how much you've saved towards this goal.
                     </DialogDescription>
@@ -363,7 +393,10 @@ const Goals: React.FC = () => {
             Create New Goal
           </Button>
         </DialogTrigger>
-        <DialogContent style={{ background: "black" }}>
+        <DialogContent
+          style={{ background: "black" }}
+          className="md:scale-100 scale-[0.85] origin-center z-[9999]"
+        >
           <DialogHeader>
             <DialogTitle>Create New Savings Goal</DialogTitle>
             <DialogDescription>
