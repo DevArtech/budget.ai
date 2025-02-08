@@ -186,7 +186,7 @@ function SpendCard() {
     const angleInRadians = (angleInDegrees * Math.PI) / 180;
 
     // Calculate x and y coordinates on a circle
-    const offset = 255;
+    const offset = isMobile ? containerWidth / 2 + 110 : 260;
     const x = -Math.cos(angleInRadians) * offset;
     const y = -Math.sin(angleInRadians) * offset;
 
