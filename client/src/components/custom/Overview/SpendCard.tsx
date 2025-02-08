@@ -83,7 +83,7 @@ function SpendCard() {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
-      setContainerWidth(window.innerWidth * 0.95);
+      setContainerWidth(window.innerWidth * 0.8);
     };
 
     window.addEventListener("resize", handleResize);
