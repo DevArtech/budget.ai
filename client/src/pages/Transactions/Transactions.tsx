@@ -180,7 +180,10 @@ export default function Transactions() {
           <Settings2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent style={{ backgroundColor: "black" }}>
+      <DialogContent
+        style={{ backgroundColor: "black" }}
+        className="md:scale-100 scale-[0.9] origin-center"
+      >
         <DialogHeader>
           <DialogTitle>Filter Transactions</DialogTitle>
         </DialogHeader>
