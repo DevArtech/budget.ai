@@ -43,6 +43,10 @@ function SpendCard() {
     refreshBudgetData,
   } = useStore();
 
+  const [containerWidth, setContainerWidth] = useState(
+    window.innerWidth * 0.79
+  );
+
   useEffect(() => {
     const modifiedData = spendData.map((item) => {
       if (item.name === "Safe-to-Spend" && item.value === 0) {
@@ -81,74 +85,12 @@ function SpendCard() {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
+      setContainerWidth(window.innerWidth * 0.95);
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  useEffect(() => {
-    const calculateSpendForSelectedDays = () => {
-      const selectedDayCount =
-        Object.values(selectedDays).filter(Boolean).length || 1;
-      const dailyBudget = budgetAllotment / 7;
-      const selectedDaysBudget = dailyBudget * selectedDayCount;
-
-      const today = new Date();
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay());
-
-      const selectedDaysSpend = transactions
-        .filter((transaction) => {
-          if (transaction.type !== "expense") return false;
-
-          const transactionDate = new Date(transaction.date);
-          const dayOfWeek = transactionDate.getDay();
-          const dayMap: { [key: number]: string } = {
-            0: "Sun",
-            1: "Mon",
-            2: "Tue",
-            3: "Wed",
-            4: "Thu",
-            5: "Fri",
-            6: "Sat",
-          };
-
-          return (
-            transactionDate >= startOfWeek &&
-            transactionDate <= today &&
-            selectedDays[dayMap[dayOfWeek]]
-          );
-        })
-        .reduce((total, transaction) => total + transaction.amount, 0);
-
-      const safeToSpend = Math.max(0, selectedDaysBudget - selectedDaysSpend);
-      const spendPercentage =
-        100 - (selectedDaysSpend / selectedDaysBudget) * 100;
-      const isNearWarning = warningPosition >= spendPercentage;
-
-      setSpendData([
-        {
-          name: "Safe-to-Spend",
-          value: safeToSpend,
-          fill: isNearWarning ? "#ffd700" : "#82ca9d",
-        },
-        {
-          name: "Dummy",
-          value: selectedDaysBudget,
-          fill: isNearWarning ? "#ffd700" : "#82ca9d",
-        },
-      ]);
-    };
-
-    calculateSpendForSelectedDays();
-  }, [
-    selectedDays,
-    budgetAllotment,
-    transactions,
-    warningPosition,
-    spendOverTime,
-  ]);
 
   useEffect(() => {
     const calculateSpendForSelectedDays = () => {
@@ -280,7 +222,10 @@ function SpendCard() {
       <CardContent>
         <div className={styles.spendContainer}>
           <div className={styles.spendRelativeContainer}>
-            <ResponsiveContainer width={isMobile ? 295 : 300} height={350}>
+            <ResponsiveContainer
+              width={isMobile ? containerWidth : 300}
+              height={350}
+            >
               <RadialBarChart
                 innerRadius="90%"
                 outerRadius="150%"
